@@ -104,7 +104,8 @@ const CreatePost = () => {
                     tags: draft.tags || '',
                     difficulty: draft.difficulty || 'Beginner',
                     visibility: draft.visibility || 'public',
-                    type: draft.type || 'article'
+                    type: draft.type || 'article',
+                    status: draft.status || 'published'
                 });
                 setAttachments(draft.attachments || []);
                 setLastSaved(new Date(draft.timestamp));
@@ -224,7 +225,7 @@ const CreatePost = () => {
                 attachments
             };
 
-            const { data } = await api.post('/posts', postData);
+            await api.post('/posts', postData);
             clearDraft(); // Clear draft after successful post
             toast.success('Post published successfully! 🎉');
             navigate(`/dashboard?refresh=true`);
