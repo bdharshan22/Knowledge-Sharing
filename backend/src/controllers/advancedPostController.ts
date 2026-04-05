@@ -284,7 +284,7 @@ export const voteAnswer = async (req: Request, res: Response) => {
             return res.status(404).json({ message: 'Post not found' });
         }
 
-        const answer = post.answers.id(answerId);
+        const answer = (post.answers as any).id(answerId as string);
         if (!answer) {
             return res.status(404).json({ message: 'Answer not found' });
         }
@@ -322,7 +322,7 @@ export const acceptAnswer = async (req: Request, res: Response) => {
             return res.status(403).json({ message: 'Only question author can accept answers' });
         }
 
-        const answer = post.answers.id(answerId);
+        const answer = (post.answers as any).id(answerId as string);
         if (!answer) {
             return res.status(404).json({ message: 'Answer not found' });
         }
@@ -344,7 +344,7 @@ export const acceptAnswer = async (req: Request, res: Response) => {
             type: 'answer_accepted',
             title: 'Answer Accepted',
             message: 'Your answer was accepted',
-            data: { postId: post._id, answerId }
+            data: { postId: post._id, answerId: answerId as string }
         });
 
         res.json({ message: 'Answer accepted successfully' });
