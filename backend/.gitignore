@@ -1,0 +1,12 @@
+node_modules/
+.env
+dist/
+*.log
+*.txt
+*.local
+.DS_Store
+package-lock.json
+pass_output.txt
+users_output.txt
+server_reqs.log
+tsc_errors.txt
