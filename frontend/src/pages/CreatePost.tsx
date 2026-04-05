@@ -17,6 +17,7 @@ const CreatePost = () => {
     const [showPreview, setShowPreview] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const [lastSaved, setLastSaved] = useState<Date | null>(null);
+    const [postId, setPostId] = useState<string | null>(null);
     const [showDraftModal, setShowDraftModal] = useState(false);
 
     const [formData, setFormData] = useState({
@@ -26,7 +27,8 @@ const CreatePost = () => {
         tags: '',
         difficulty: 'Beginner',
         visibility: 'public',
-        type: 'article'
+        type: 'article',
+        status: 'published'
     });
 
     const [attachments, setAttachments] = useState<{ name: string, url: string, type: string, size: number }[]>([]);
@@ -57,14 +59,37 @@ const CreatePost = () => {
         return () => clearInterval(autoSaveTimer);
     }, [formData]);
 
-    const saveDraft = () => {
+    const saveDraft = async () => {
         const draft = {
             ...formData,
             attachments,
             timestamp: Date.now()
         };
         localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
-        setLastSaved(new Date());
+        
+        // Also save to database if we have enough content
+        if (formData.title || formData.content) {
+            try {
+                const postData = {
+                    ...formData,
+                    status: 'draft',
+                    tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
+                    attachments
+                };
+
+                if (postId) {
+                    await api.put(`/posts/${postId}`, postData);
+                } else {
+                    const { data } = await api.post('/posts', postData);
+                    setPostId(data._id);
+                }
+                setLastSaved(new Date());
+            } catch (error) {
+                console.error('Failed to save cloud draft', error);
+            }
+        } else {
+            setLastSaved(new Date());
+        }
     };
 
     const restoreDraft = () => {
@@ -202,7 +227,7 @@ const CreatePost = () => {
             const { data } = await api.post('/posts', postData);
             clearDraft(); // Clear draft after successful post
             toast.success('Post published successfully! 🎉');
-            navigate(`/posts/${data._id}?refresh=true`);
+            navigate(`/dashboard?refresh=true`);
         } catch (error) {
             console.error('Create post failed', error);
             toast.error('Failed to create post. Please try again.');

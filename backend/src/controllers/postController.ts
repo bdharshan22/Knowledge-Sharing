@@ -39,6 +39,7 @@ export const createPost = async (req: Request, res: Response) => {
             difficulty: difficulty || 'Beginner',
             attachments: attachments || [],
             visibility: visibility || 'public',
+            status: req.body.status || 'published',
             author: userId,
             moderationStatus: blockedTerm ? 'pending' : 'approved',
             flags: blockedTerm
@@ -93,7 +94,7 @@ export const getPosts = async (req: Request, res: Response) => {
         // If we really want to sort by likes length, we'd need an aggregation pipeline.
         // For this step, let's assume we sort by views for "Popular" to keep it robust.
 
-        // Visibility Filter
+        // Visibility & Status Filter
         const userId = (req as any).user ? (req as any).user.id : null;
         let userFollowing: any[] = [];
 
@@ -106,27 +107,22 @@ export const getPosts = async (req: Request, res: Response) => {
 
         const visibilityFilter = {
             $or: [
-                { visibility: 'public' }, // Everyone sees public
-                { visibility: 'private', author: userId }, // Author sees own private
-                // Author sees own followers-only OR User sees followers-only from people they follow
+                { visibility: 'public' },
+                { visibility: 'private', author: userId },
                 { visibility: 'followers', author: { $in: [...userFollowing, userId] } }
             ]
         };
-
-        if (author) {
-            if (author === 'me' && userId) {
-                query.author = userId;
-            } else if (typeof author === 'string') {
-                query.author = author;
-            }
-        }
 
         const moderationFilter = userId
             ? { $or: [{ moderationStatus: 'approved' }, { author: userId }] }
             : { moderationStatus: 'approved' };
 
+        const statusFilter = userId
+            ? { $or: [{ status: 'published' }, { author: userId }] }
+            : { status: 'published' };
+
         // Merge with existing query
-        query = { ...query, ...visibilityFilter, ...moderationFilter };
+        query = { ...query, ...visibilityFilter, ...moderationFilter, ...statusFilter };
 
         const page = Number(req.query.page) || 1;
         const limit = Number(req.query.limit) || 10;
@@ -228,6 +224,7 @@ export const updatePost = async (req: Request, res: Response) => {
             type,
             difficulty,
             attachments,
+            status,
             editReason
         } = req.body;
 
@@ -281,6 +278,8 @@ export const updatePost = async (req: Request, res: Response) => {
                 post.tags = tags.split(',').map((t: string) => t.trim()).filter(Boolean);
             }
         }
+
+        if (status !== undefined) post.status = status;
 
         const blockedTerm = findBlockedTerm(`${post.title} ${post.content}`);
         if (blockedTerm) {
@@ -662,9 +661,14 @@ export const getFeed = async (req: Request, res: Response) => {
             $or: [{ moderationStatus: 'approved' }, { author: userId }]
         } : { moderationStatus: 'approved' };
 
+        const statusFilter = userId ? {
+            $or: [{ status: 'published' }, { author: userId }]
+        } : { status: 'published' };
+
         const candidatePosts = await Post.find({
             ...visibilityFilter,
-            ...moderationFilter
+            ...moderationFilter,
+            ...statusFilter
         })
             .select('title excerpt author createdAt likes comments bookmarks views type tags category difficulty visibility')
             .populate('author', 'name avatar')

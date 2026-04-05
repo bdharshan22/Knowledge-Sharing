@@ -16,7 +16,7 @@ interface Post {
     likes: string[];
     bookmarks?: string[];
     comments: any[];
-    type: 'question' | 'article' | 'resource';
+    type: 'question' | 'article' | 'resource' | 'tutorial' | 'discussion' | 'announcement';
     tags?: string[];
     views?: number;
     feedReasons?: string[];
@@ -258,14 +258,16 @@ const KnowledgeFeed = () => {
     }, [posts, filter, selectedTypes, selectedTags, sortBy]);
 
     const stats = useMemo(() => {
+        // We use all the fetched items to calculate stats for the current view
         const total = posts.length;
-        const questions = posts.filter(p => p.type === 'question').length;
         const articles = posts.filter(p => p.type === 'article').length;
+        const questions = posts.filter(p => p.type === 'question').length;
+        const announcements = posts.filter(p => p.type === 'announcement').length;
         const recent = posts.filter(p => {
             const created = new Date(p.createdAt).getTime();
             return Date.now() - created < 7 * 24 * 60 * 60 * 1000;
         }).length;
-        return { total, questions, articles, recent };
+        return { total, questions, articles, announcements, recent };
     }, [posts]);
 
     const handleSearchSubmit = (e: React.FormEvent) => {
@@ -364,6 +366,10 @@ const KnowledgeFeed = () => {
                             <div className="text-xs font-bold uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">Articles</div>
                             <div className="text-3xl font-bold text-slate-900 mt-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-purple-600 group-hover:to-pink-600 transition-all duration-300">{stats.articles}</div>
                             <div className="mt-2 h-1 w-0 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full group-hover:w-full transition-all duration-500" />
+                        </div>
+                        <div className="glass-card p-6 group hover:translate-y-[-4px] transition-all duration-300 cursor-pointer" onClick={() => setFilter('announcement')}>
+                            <div className="text-xs font-bold uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500">Announcements</div>
+                            <div className="text-3xl font-bold text-slate-900 mt-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-orange-400 group-hover:to-red-500 transition-all duration-300">{stats.announcements}</div>
                         </div>
                         <div className="glass-premium p-5 card-hover group">
                             <div className="text-xs font-bold uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600">New This Week</div>
@@ -633,7 +639,7 @@ const KnowledgeFeed = () => {
                         <>
                             <div className="flex items-center justify-between glass-card p-2 rounded-xl">
                                 <div className="flex space-x-1">
-                                    {['all', 'question', 'article'].map(f => (
+                                    {['all', 'question', 'article', 'announcement'].map(f => (
                                         <button
                                             key={f}
                                             onClick={() => setFilter(f)}

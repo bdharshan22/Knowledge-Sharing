@@ -36,7 +36,7 @@ interface Post {
     bookmarks?: string[];
     answers: Answer[];
     comments: Comment[];
-    type: 'article' | 'question' | 'resource';
+    type: 'article' | 'question' | 'resource' | 'tutorial' | 'discussion' | 'announcement';
     acceptedAnswer?: string;
     createdAt: string;
     views?: number;
@@ -94,6 +94,7 @@ const PostDetail = () => {
     const [isFollowingAuthor, setIsFollowingAuthor] = useState(false);
     const [followLoading, setFollowLoading] = useState(false);
     const [isPdfGenerating, setIsPdfGenerating] = useState(false);
+    const [lastSaved, setLastSaved] = useState<Date | null>(null);
     const contentRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
     const auth = useContext(AuthContext);
@@ -112,6 +113,34 @@ const PostDetail = () => {
     useEffect(() => {
         fetchPost();
     }, [fetchPost]);
+
+    // Auto-save edits every 30 seconds
+    useEffect(() => {
+        if (!isEditing) return;
+
+        const autoSaveTimer = setInterval(() => {
+            const autoUpdate = async () => {
+                try {
+                    await api.put(`/posts/${id}`, {
+                        title: editTitle,
+                        content: editContent,
+                        tags: editTags.split(',').map(tag => tag.trim()).filter(Boolean),
+                        category: editCategory || post?.category || 'Development',
+                        visibility: editVisibility,
+                        type: editType,
+                        difficulty: editDifficulty,
+                        editReason: editReason || 'Auto-saved'
+                    });
+                    setLastSaved(new Date());
+                } catch (error) {
+                    console.error('Auto-save failed', error);
+                }
+            };
+            autoUpdate();
+        }, 30000);
+
+        return () => clearInterval(autoSaveTimer);
+    }, [isEditing, id, editTitle, editContent, editTags, editCategory, editVisibility, editType, editDifficulty, post?.category, editReason]);
 
     const handleDelete = async () => {
         if (window.confirm('Are you sure you want to delete this post? This cannot be undone.')) {
@@ -799,13 +828,21 @@ const PostDetail = () => {
                                             />
                                         </div>
 
-                                        <div className="flex flex-col sm:flex-row justify-end gap-3">
-                                            <button type="button" onClick={cancelEditing} className="btn-secondary px-6 py-2.5">
-                                                Cancel
-                                            </button>
-                                            <button type="submit" className="btn-primary px-6 py-2.5">
-                                                Save Changes
-                                            </button>
+                                        <div className="flex flex-col sm:flex-row items-center justify-end gap-4">
+                                            {lastSaved && (
+                                                <span className="text-xs text-emerald-600 font-medium flex items-center gap-1.5">
+                                                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                                                    Last saved at {lastSaved.toLocaleTimeString()}
+                                                </span>
+                                            )}
+                                            <div className="flex gap-3">
+                                                <button type="button" onClick={cancelEditing} className="btn-secondary px-6 py-2.5">
+                                                    Cancel
+                                                </button>
+                                                <button type="submit" className="btn-primary px-6 py-2.5">
+                                                    Save Changes
+                                                </button>
+                                            </div>
                                         </div>
                                     </form>
                                 ) : (
