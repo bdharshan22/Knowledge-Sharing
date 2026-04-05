@@ -632,19 +632,22 @@ export const getFeed = async (req: Request, res: Response) => {
         let followingIds: any[] = [];
         let topicSet = new Set<string>();
         let bookmarkSet = new Set<string>();
+        let isNewUser = true;
 
         if (userId) {
             const user = await User.findById(userId);
             if (!user) return res.status(404).json({ message: 'User not found' });
             
             followingIds = user.following || [];
+            if (followingIds.length > 0) isNewUser = false;
+
+            const skills = (user.skills || []).filter(Boolean);
+            const expertise = (user.expertise || []).map((e: any) => e.topic).filter(Boolean);
+            
+            if (skills.length > 0 || expertise.length > 0) isNewUser = false;
+
             topicSet = new Set(
-                [
-                    ...(user.skills || []),
-                    ...(user.expertise || []).map((e: any) => e.topic)
-                ]
-                    .filter(Boolean)
-                    .map((t: string) => t.toLowerCase())
+                [...skills, ...expertise].map((t: string) => t.toLowerCase())
             );
             bookmarkSet = new Set((user.bookmarks || []).map((id: any) => id.toString()));
         }
@@ -670,10 +673,10 @@ export const getFeed = async (req: Request, res: Response) => {
             ...moderationFilter,
             ...statusFilter
         })
-            .select('title excerpt author createdAt likes comments bookmarks views type tags category difficulty visibility')
+            .select('title excerpt author createdAt likes comments bookmarks views type tags category difficulty visibility status')
             .populate('author', 'name avatar')
             .sort({ createdAt: -1 })
-            .limit(200);
+            .limit(500);
 
         const now = Date.now();
 
@@ -690,12 +693,14 @@ export const getFeed = async (req: Request, res: Response) => {
                 (post.views || 0) * 0.1;
 
             const hoursAgo = Math.max(1, (now - new Date(post.createdAt).getTime()) / (1000 * 60 * 60));
-            const recencyBoost = Math.max(0, 48 - hoursAgo);
-            const topicBoost = tagOverlap.length * 12;
-            const followingBoost = fromFollowing ? 40 : 0;
-            const savedBoost = isBookmarked ? 15 : 0;
+            // Recency is very important for new users and discovery
+            const recencyBoost = Math.max(0, 72 - hoursAgo) * (isNewUser ? 2 : 1); 
+            const topicBoost = tagOverlap.length * 15;
+            const followingBoost = fromFollowing ? 50 : 0;
+            const savedBoost = isBookmarked ? 20 : 0;
+            const globalDiscoveryBoost = isNewUser ? 10 : 0; // Small boost for all posts for new users
 
-            const score = engagementScore + recencyBoost + topicBoost + followingBoost + savedBoost;
+            const score = engagementScore + recencyBoost + topicBoost + followingBoost + savedBoost + globalDiscoveryBoost;
 
             const reasons: string[] = [];
             if (fromFollowing) reasons.push('From someone you follow');

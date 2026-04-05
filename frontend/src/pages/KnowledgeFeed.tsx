@@ -93,13 +93,13 @@ const KnowledgeFeed = () => {
         const fetchPosts = async () => {
             try {
                 // Try personalized feed first
-                const res = await api.get('/posts/feed');
+                const res = await api.get('/posts/feed', { params: { limit: 24 } });
                 let next = res.data;
 
                 // If feed is empty, fall back to regular posts
                 if (!Array.isArray(next) || next.length === 0) {
                     console.log('Feed empty, falling back to regular posts');
-                    const fallbackRes = await api.get('/posts');
+                    const fallbackRes = await api.get('/posts', { params: { limit: 24 } });
                     next = fallbackRes.data;
                 }
 
