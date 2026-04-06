@@ -167,7 +167,7 @@ function App() {
 
             {/* Community */}
             <Route path="/events"          element={<Events />} />
-            <Route path="/rooms/:id"       element={<ChatRoom />} />
+            <Route path="/community/rooms/:id" element={<ChatRoom />} />
             <Route path="/community"       element={<Community />} />
             <Route path="/leaderboard"     element={<Leaderboard />} />
 

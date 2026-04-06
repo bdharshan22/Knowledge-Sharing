@@ -105,6 +105,18 @@ const ChatRoom = () => {
         </div>
     );
 
+    if (!room) return (
+        <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center">
+            <Navbar forceWhite={true} />
+            <div className="text-center">
+                <div className="text-6xl mb-4">😿</div>
+                <h2 className="text-2xl font-bold text-slate-900">Room not found</h2>
+                <p className="text-slate-600 mb-6">This room might have been archived or deleted.</p>
+                <Link to="/community" className="px-6 py-2 bg-cyan-600 text-white font-bold rounded-xl">Back to Community</Link>
+            </div>
+        </div>
+    );
+
     return (
         <div className="min-h-screen bg-slate-50 font-sans selection:bg-cyan-200 selection:text-slate-900 flex flex-col">
             <Navbar forceWhite={true} />
