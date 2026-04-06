@@ -91,7 +91,7 @@ const Events = () => {
                     <div className="text-center py-20 text-gray-500">Loading events...</div>
                 ) : (
                     <div className="space-y-6">
-                        {events.map((event, index) => {
+                        {events.length > 0 ? events.map((event, index) => {
                             const isRegistered = user && event.attendees.includes(user._id);
                             const eventDate = new Date(event.date);
                             const isLive = new Date() >= eventDate && new Date() <= new Date(eventDate.getTime() + 2 * 60 * 60 * 1000); // Mock "Live" if within 2 hours
@@ -132,8 +132,8 @@ const Events = () => {
 
                                         <div className="flex items-center gap-6 text-sm text-slate-500 font-medium">
                                             <div className="flex items-center gap-2">
-                                                <img src={event.host.avatar || 'https://www.gravatar.com/avatar?d=mp'} alt="" className="w-6 h-6 rounded-full ring-2 ring-slate-200" />
-                                                <span className="text-slate-700">By {event.host.name}</span>
+                                                <img src={event.host?.avatar || `https://ui-avatars.com/api/?name=${event.host?.name || 'Anonymous'}`} alt="" className="w-6 h-6 rounded-full ring-2 ring-slate-200" />
+                                                <span className="text-slate-700">By {event.host?.name || 'Anonymous'}</span>
                                             </div>
                                             <div className="flex items-center gap-1">
                                                 <VideoCameraIcon className="w-4 h-4" />
@@ -165,7 +165,15 @@ const Events = () => {
                                     </div>
                                 </motion.div>
                             );
-                        })}
+                        }) : (
+                            <div className="text-center py-24 bg-white rounded-3xl border border-slate-200 shadow-sm">
+                                <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                                    <CalendarIcon className="w-10 h-10 text-slate-300" />
+                                </div>
+                                <h3 className="text-xl font-bold text-slate-900 mb-2">No upcoming events</h3>
+                                <p className="text-slate-500 max-w-sm mx-auto">There are no events scheduled right now. Check back later or create your own event!</p>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
