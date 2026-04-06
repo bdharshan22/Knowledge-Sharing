@@ -107,8 +107,8 @@ const ProjectDetail = () => {
 
                         <div className="flex items-center space-x-6 text-slate-600">
                             <div className="flex items-center">
-                                <img src={project.author.avatar || `https://ui-avatars.com/api/?name=${project.author.name}`} className="w-10 h-10 rounded-full border-2 border-slate-200 mr-3" alt="" />
-                                <span className="font-medium text-slate-900">{project.author.name}</span>
+                                <img src={project.author?.avatar || `https://ui-avatars.com/api/?name=${project.author?.name || 'Anonymous'}`} className="w-10 h-10 rounded-full border-2 border-slate-200 mr-3" alt="" />
+                                <span className="font-medium text-slate-900">{project.author?.name || 'Anonymous'}</span>
                             </div>
                             <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
                             <span>{new Date(project.createdAt).toLocaleDateString()}</span>
@@ -148,7 +148,7 @@ const ProjectDetail = () => {
 
                             {user ? (
                                 <form onSubmit={handleComment} className="mb-8 flex gap-4">
-                                    <img src={user.avatar || `https://ui-avatars.com/api/?name=${user.name}`} className="w-10 h-10 rounded-full" />
+                                    <img src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.name || 'User'}`} className="w-10 h-10 rounded-full" />
                                     <div className="flex-1">
                                         <textarea
                                             value={commentText}
@@ -176,10 +176,10 @@ const ProjectDetail = () => {
                             <div className="space-y-6">
                                 {project.comments.map((comment: any, idx: number) => (
                                     <div key={idx} className="flex gap-4">
-                                        <img src={comment.user.avatar || `https://ui-avatars.com/api/?name=${comment.user.name}`} className="w-10 h-10 rounded-full bg-slate-100" />
+                                        <img src={comment.user?.avatar || `https://ui-avatars.com/api/?name=${comment.user?.name || 'Anonymous'}`} className="w-10 h-10 rounded-full bg-slate-100" />
                                         <div className="flex-1 space-y-1">
                                             <div className="flex items-center justify-between">
-                                                <span className="font-bold text-slate-900 text-sm">{comment.user.name}</span>
+                                                <span className="font-bold text-slate-900 text-sm">{comment.user?.name || 'Anonymous'}</span>
                                                 <span className="text-xs text-slate-400">{new Date(comment.createdAt).toLocaleDateString()}</span>
                                             </div>
                                             <div className="text-slate-700 text-sm bg-slate-50 p-3 rounded-lg rounded-tl-none inline-block">

@@ -1117,8 +1117,8 @@ const PostDetail = () => {
                                                         Answered {new Date(answer.createdAt).toLocaleDateString()}
                                                     </div>
                                                     <div className="flex items-center gap-3 bg-slate-100 px-4 py-2 rounded-xl border border-slate-200">
-                                                        <img src={answer.author.avatar || `https://ui-avatars.com/api/?name=${answer.author.name}&background=e2e8f0&color=0f172a`} className="w-6 h-6 rounded-lg" />
-                                                        <span className="font-bold text-cyan-700">{answer.author?.name}</span>
+                                                        <img src={answer.author?.avatar || `https://ui-avatars.com/api/?name=${answer.author?.name || 'Anonymous'}&background=e2e8f0&color=0f172a`} className="w-6 h-6 rounded-lg" />
+                                                        <span className="font-bold text-cyan-700">{answer.author?.name || 'Anonymous'}</span>
                                                     </div>
                                                 </div>
                                             </div>
