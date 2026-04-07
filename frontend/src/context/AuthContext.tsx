@@ -31,6 +31,7 @@ interface AuthContextType {
   loading: boolean;
   login: (token: string, userData: User) => void;
   logout: () => void;
+  secondsRemaining: number | null;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -38,6 +39,7 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [secondsRemaining, setSecondsRemaining] = useState<number | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -60,28 +62,38 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // ── Auto Logout Logic (2 minutes) ─────────────────────────────────────────────
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setSecondsRemaining(null);
+      return;
+    }
 
     let logoutTimer: any;
+    let countdownInterval: any;
+    const LIMIT = 120; // 2 minutes in seconds
 
     const resetTimer = () => {
       if (logoutTimer) clearTimeout(logoutTimer);
-      // Set timer to 2 minutes (120,000ms)
+      if (countdownInterval) clearInterval(countdownInterval);
+
+      setSecondsRemaining(LIMIT);
+
       logoutTimer = setTimeout(() => {
-        console.log('Inactivity detected. Logging out...');
         logout();
-      }, 120000); 
+      }, LIMIT * 1000);
+
+      countdownInterval = setInterval(() => {
+        setSecondsRemaining(prev => (prev && prev > 0) ? prev - 1 : 0);
+      }, 1000);
     };
 
-    // Events to track user activity
     const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
     events.forEach(event => window.addEventListener(event, resetTimer));
 
-    // Initialize timer
     resetTimer();
 
     return () => {
       if (logoutTimer) clearTimeout(logoutTimer);
+      if (countdownInterval) clearInterval(countdownInterval);
       events.forEach(event => window.removeEventListener(event, resetTimer));
     };
   }, [user]);
@@ -99,7 +111,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, secondsRemaining }}>
       {children}
     </AuthContext.Provider>
   );

@@ -17,9 +17,7 @@ const DEFAULT_LINKS = [
 ];
 
 const Navbar = ({ forceWhite, links = DEFAULT_LINKS }: NavbarProps) => {
-    const auth = useContext(AuthContext);
-    const user = auth?.user;
-    const logout = auth?.logout || (() => { });
+    const { user, logout, secondsRemaining } = auth!;
     const navigate = useNavigate();
     const location = useLocation();
     const [scrolled, setScrolled] = useState(false);
@@ -188,6 +186,20 @@ const Navbar = ({ forceWhite, links = DEFAULT_LINKS }: NavbarProps) => {
 
                 {/* ─── Right Side ─── */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }} className="hidden-mobile">
+                    {user && secondsRemaining !== null && (
+                        <div style={{
+                            display: 'flex', alignItems: 'center', gap: '0.375rem',
+                            padding: '0.4rem 0.75rem', borderRadius: '0.625rem',
+                            background: secondsRemaining < 30 ? 'rgba(239, 68, 68, 0.12)' : 'rgba(100, 160, 255, 0.06)',
+                            border: `1px solid ${secondsRemaining < 30 ? 'rgba(239, 68, 68, 0.25)' : 'rgba(100, 160, 255, 0.12)'}`,
+                            marginRight: '0.25rem', transition: 'all 0.3s ease'
+                        }}>
+                            <span style={{ fontSize: '0.7rem', fontWeight: 800, color: secondsRemaining < 30 ? '#f87171' : '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Session:</span>
+                            <span style={{ fontSize: '0.85rem', fontWeight: 800, color: secondsRemaining < 30 ? '#f87171' : '#06b6d4', width: '3.2rem', textAlign: 'center', fontFamily: 'monospace' }}>
+                                {Math.floor(secondsRemaining / 60)}:{String(secondsRemaining % 60).padStart(2, '0')}
+                            </span>
+                        </div>
+                    )}
                     {user ? (
                         <>
                             {/* Create post button */}
@@ -380,6 +392,20 @@ const Navbar = ({ forceWhite, links = DEFAULT_LINKS }: NavbarProps) => {
                         }}
                     >
                         <div style={{ padding: '1rem 1.5rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                            {user && secondsRemaining !== null && (
+                                <div style={{
+                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                    padding: '0.75rem 1rem', borderRadius: '0.875rem',
+                                    background: secondsRemaining < 30 ? 'rgba(239, 68, 68, 0.12)' : 'rgba(100, 160, 255, 0.04)',
+                                    border: `1px solid ${secondsRemaining < 30 ? 'rgba(239, 68, 68, 0.25)' : 'rgba(100, 160, 255, 0.08)'}`,
+                                    marginBottom: '0.5rem'
+                                }}>
+                                    <span style={{ fontSize: '0.8rem', fontWeight: 700, color: secondsRemaining < 30 ? '#f87171' : '#94a3b8' }}>🔒 Session Privacy Timeout</span>
+                                    <span style={{ fontSize: '0.95rem', fontWeight: 800, color: secondsRemaining < 30 ? '#f87171' : '#06b6d4', fontFamily: 'monospace' }}>
+                                        {Math.floor(secondsRemaining / 60)}:{String(secondsRemaining % 60).padStart(2, '0')}
+                                    </span>
+                                </div>
+                            )}
                             {links.map(link => (
                                 link.isAnchor ? (
                                     <a key={link.to} href={link.to} onClick={() => setIsMenuOpen(false)}
