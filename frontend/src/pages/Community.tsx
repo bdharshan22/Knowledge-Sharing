@@ -151,7 +151,10 @@ const Community = () => {
             {/* Mobile Sidebar Toggle */}
             <div style={{ display: 'none', padding: '1rem 1.5rem 0' }} className="mobile-only-flex">
                 <button onClick={() => setShowRightSidebar(true)} style={{ width: '100%', padding: '0.9rem', background: C.card, border: `1px solid ${C.border}`, borderRadius: '1rem', fontWeight: 700, color: C.t1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-                    📊 Community Insights & Polls
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                        📊 Community Insights & Polls
+                        <motion.span animate={{ y: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 1.8 }} style={{ fontSize: '0.9rem' }}>👆</motion.span>
+                    </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', background: '#f0fdf4', padding: '0.2rem 0.625rem', borderRadius: '99px', border: '1px solid #bbf7d0' }}>
                          <motion.div animate={{ scale: [1, 1.6, 1], opacity: [1, 0.4, 1] }} transition={{ repeat: Infinity, duration: 2 }} style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px rgba(16,185,129,0.6)' }} />
                          <span style={{ fontSize: '0.6rem', fontWeight: 800, color: '#166534', letterSpacing: '0.04em' }}>LIVE NOW</span>
@@ -241,10 +244,70 @@ const Community = () => {
 
                 {/* Right sidebar */}
                 <AnimatePresence>
-                    {(showRightSidebar || window.innerWidth >= 1101) && (
-                        <motion.div initial="hidden" animate="visible" exit="hidden" variants={sidebarVariants} transition={{ type: 'spring', damping: 25 }} className="right-sidebar-container" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                            <button className="mobile-only-flex" onClick={() => setShowRightSidebar(false)} style={{ width: '100%', padding: '0.875rem', background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '0.5rem', fontWeight: 700, marginBottom: '0.5rem', display: 'none' }}>Close Insights</button>
-                            
+                    {showRightSidebar && (
+                        <>
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowRightSidebar(false)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(4px)', zIndex: 999 }} />
+                            <motion.div initial="hidden" animate="visible" exit="hidden" variants={sidebarVariants} transition={{ type: 'spring', damping: 25 }} className="right-sidebar-container" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', zIndex: 1000 }}>
+                                <button className="mobile-only-flex" onClick={() => setShowRightSidebar(false)} style={{ width: '100%', padding: '0.875rem', background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '0.5rem', fontWeight: 700, marginBottom: '0.5rem', display: 'none' }}>Close Insights</button>
+                                
+                                {/* Polls panel */}
+                                <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: '1rem', overflow: 'hidden' }}>
+                                    <div style={{ padding: '1rem 1.25rem', borderBottom: `1px solid ${C.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(135deg, #faf5ff, #eff6ff)' }}>
+                                        <h2 style={{ fontWeight: 800, color: C.t1, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            🔥 Hot Polls
+                                        </h2>
+                                        {user && (
+                                            <button onClick={handleCreatePoll} style={{ background: 'none', border: 'none', color: C.accent, fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}>+ New</button>
+                                        )}
+                                    </div>
+                                    <div style={{ padding: '1rem' }}>
+                                        {polls.length === 0 ? (
+                                            <p style={{ color: C.t2, fontSize: '0.875rem', textAlign: 'center' }}>No active polls.</p>
+                                        ) : (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+                                                {polls.slice(0, 3).map((poll: any) => (
+                                                    <div key={poll._id} style={{ padding: '0.875rem', background: C.bg, borderRadius: '0.75rem', border: `1px solid ${C.border}` }}>
+                                                        <PollWidget poll={poll} onVote={fetchData} />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Community stats */}
+                                <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: '1rem', padding: '1.25rem' }}>
+                                    <h4 style={{ fontSize: '0.72rem', fontWeight: 800, color: C.accent, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>Community Stats</h4>
+                                    {[
+                                        { label: 'Active Rooms', value: rooms.length, icon: '💬', color: '#06b6d4' },
+                                        { label: 'Live Polls', value: polls.length, icon: '📊', color: '#a855f7' },
+                                        { label: 'Total Members', value: rooms.reduce((s: number, r: any) => s + (r.members?.length || 0), 0), icon: '👥', color: '#10b981' },
+                                    ].map(stat => (
+                                        <div key={stat.label} style={{ display: 'flex', alignItems: 'center', gap: '0.875rem', padding: '0.625rem 0', borderBottom: `1px solid ${C.border}` }}>
+                                            <span style={{ fontSize: '1.1rem' }}>{stat.icon}</span>
+                                            <span style={{ flex: 1, color: C.t2, fontSize: '0.875rem', fontWeight: 500 }}>{stat.label}</span>
+                                            <span style={{ fontWeight: 900, color: stat.color, fontFamily: '"Space Grotesk", sans-serif', fontSize: '1rem' }}>{stat.value}</span>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Pro upgrade card */}
+                                <div style={{ borderRadius: '1rem', padding: '1.5rem', background: 'linear-gradient(135deg, #6366f1, #06b6d4)', position: 'relative', overflow: 'hidden' }}>
+                                    <div style={{ position: 'absolute', top: -24, right: -24, width: 100, height: 100, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
+                                    <div style={{ position: 'relative' }}>
+                                        <div style={{ fontSize: '1.75rem', marginBottom: '0.625rem' }}>⚡</div>
+                                        <h3 style={{ fontWeight: 800, color: '#fff', marginBottom: '0.375rem', fontSize: '0.975rem' }}>Pro Access</h3>
+                                        <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.8rem', lineHeight: 1.6, marginBottom: '1rem' }}>
+                                            Private channels & premium support.
+                                        </p>
+                                        <button style={{ width: '100%', padding: '0.625rem', borderRadius: '0.625rem', background: 'rgba(255,255,255,0.2)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer' }}>Upgrade →</button>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        </>
+                    )}
+                    {window.innerWidth >= 1101 && (
+                        <div className="right-sidebar-container" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                             {/* Polls panel */}
                             <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: '1rem', overflow: 'hidden' }}>
                                 <div style={{ padding: '1rem 1.25rem', borderBottom: `1px solid ${C.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(135deg, #faf5ff, #eff6ff)' }}>
@@ -269,7 +332,6 @@ const Community = () => {
                                     )}
                                 </div>
                             </div>
-
                             {/* Community stats */}
                             <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: '1rem', padding: '1.25rem' }}>
                                 <h4 style={{ fontSize: '0.72rem', fontWeight: 800, color: C.accent, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>Community Stats</h4>
@@ -285,7 +347,6 @@ const Community = () => {
                                     </div>
                                 ))}
                             </div>
-
                             {/* Pro upgrade card */}
                             <div style={{ borderRadius: '1rem', padding: '1.5rem', background: 'linear-gradient(135deg, #6366f1, #06b6d4)', position: 'relative', overflow: 'hidden' }}>
                                 <div style={{ position: 'absolute', top: -24, right: -24, width: 100, height: 100, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
@@ -298,7 +359,7 @@ const Community = () => {
                                     <button style={{ width: '100%', padding: '0.625rem', borderRadius: '0.625rem', background: 'rgba(255,255,255,0.2)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer' }}>Upgrade →</button>
                                 </div>
                             </div>
-                        </motion.div>
+                        </div>
                     )}
                 </AnimatePresence>
             </div>
