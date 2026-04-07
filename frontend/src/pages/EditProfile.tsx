@@ -1,14 +1,17 @@
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { AuthContext } from '../context/AuthContext';
 import api from '../services/api';
 import Navbar from '../components/AppNavbar';
+import { motion } from 'framer-motion';
+import { CameraIcon, UserIcon, BriefcaseIcon, MapPinIcon, LinkIcon, PencilIcon, SparklesIcon } from '@heroicons/react/24/outline';
 
 const EditProfile = () => {
     const auth = useContext(AuthContext);
     const user = auth?.user;
     const navigate = useNavigate();
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
@@ -35,7 +38,7 @@ const EditProfile = () => {
             setFormData({
                 name: user.name || '',
                 username: user.username || '',
-                jobTitle: user.jobTitle || user.title || '', // Fallback for legacy
+                jobTitle: user.jobTitle || user.title || '',
                 company: user.company || '',
                 bio: user.bio || '',
                 location: user.location || '',
@@ -69,18 +72,16 @@ const EditProfile = () => {
         setLoading(true);
 
         try {
-            // 1. Upload Avatar if changed
             let avatarUrl = user?.avatar;
             if (avatarFile) {
-                const formData = new FormData();
-                formData.append('avatar', avatarFile);
-                const res = await api.post('/users/avatar', formData, {
+                const uploadData = new FormData();
+                uploadData.append('avatar', avatarFile);
+                const res = await api.post('/users/avatar', uploadData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
                 avatarUrl = res.data.avatarUrl;
             }
 
-            // 2. Update Profile Data
             const updates = {
                 ...formData,
                 avatar: avatarUrl,
@@ -95,207 +96,221 @@ const EditProfile = () => {
                 }
             };
 
-            // Clean up empty strings
-            if (!updates.website) delete (updates as any).website;
-            if (!updates.company) delete (updates as any).company;
-
             const { data } = await api.put('/users/profile', updates);
 
-            // Update local context
-            if (auth?.login) {
-                const token = localStorage.getItem('token');
-                if (token && data.user) {
-                    auth.login(token, data.user);
-                }
-                toast.success('Profile updated successfully!');
+            if (auth?.updateUser && data.user) {
+                auth.updateUser(data.user);
+                toast.success('Profile modernized successfully!');
                 navigate(`/users/${data.user._id}`);
             }
         } catch (err) {
             console.error('Failed to update profile', err);
-            toast.error('Failed to update profile');
+            toast.error('Failed to preserve your changes. Please check your connection.');
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 pb-20">
-            <Navbar />
+        <div className="min-h-screen bg-slate-50 font-sans selection:bg-cyan-200">
+            <Navbar forceWhite={true} />
 
-            {/* Header Background */}
-            <div className="h-48 bg-gradient-to-r from-blue-600 to-indigo-700 relative overflow-hidden">
-                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150"></div>
+            {/* Background Effects */}
+            <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+                <motion.div animate={{ scale: [1, 1.2, 1], x: [0, 50, 0] }} transition={{ duration: 15, repeat: Infinity }} className="absolute top-0 -right-24 w-[600px] h-[600px] bg-cyan-200/30 rounded-full blur-[120px]" />
+                <motion.div animate={{ scale: [1, 1.1, 1], x: [0, -30, 0] }} transition={{ duration: 18, repeat: Infinity }} className="absolute bottom-0 -left-24 w-[500px] h-[500px] bg-indigo-200/30 rounded-full blur-[120px]" />
             </div>
 
-            <div className="max-w-3xl mx-auto px-4 -mt-20 relative z-10">
-                <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/60 border border-slate-100 overflow-hidden">
-                    <div className="p-8 border-b border-slate-100 bg-slate-50/50">
-                        <h1 className="text-2xl font-display font-bold text-slate-900">Edit Profile</h1>
-                        <p className="text-slate-500 text-sm mt-1">Update your personal details and public profile.</p>
-                    </div>
+            <div className="relative pt-32 pb-20 px-4 sm:px-6 z-10">
+                <div className="max-w-4xl mx-auto">
+                    
+                    {/* Floating Header */}
+                    <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-10 text-center">
+                        <span className="px-4 py-1.5 rounded-full bg-cyan-500/10 text-cyan-600 text-[10px] font-black uppercase tracking-[0.2em] border border-cyan-500/20 mb-4 inline-block">
+                            Account Settings
+                        </span>
+                        <h1 className="text-4xl font-black text-slate-900 tracking-tight">Refine Your Identity</h1>
+                        <p className="text-slate-500 mt-2 font-medium">Elevate how the community sees your contributions.</p>
+                    </motion.div>
 
-                    <form onSubmit={handleSubmit} className="p-8 space-y-8">
-                        {/* Avatar Section */}
-                        <div className="flex flex-col sm:flex-row items-center gap-6 pb-6 border-b border-slate-100">
-                            <div className="relative group">
-                                <img
-                                    src={previewAvatar || `https://ui-avatars.com/api/?name=${user?.name}&background=e2e8f0&color=0f172a`}
-                                    className="w-24 h-24 rounded-2xl object-cover border-4 border-white shadow-md"
-                                />
-                                <div className="absolute inset-0 bg-black/40 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer pointer-events-none">
-                                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    <form onSubmit={handleSubmit} className="space-y-8">
+                        
+                        {/* Main Glass Card */}
+                        <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="bg-white/70 backdrop-blur-2xl border border-white rounded-[2.5rem] shadow-[0_20px_50px_-20px_rgba(0,0,0,0.08)] overflow-hidden">
+                            
+                            {/* Card Hero Section (Avatar) */}
+                            <div className="p-8 md:p-12 bg-gradient-to-br from-slate-50/50 to-white/20 border-b border-slate-100/50 flex flex-col md:flex-row items-center gap-10">
+                                <div className="relative group">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-400 to-indigo-600 rounded-full blur-xl opacity-20 group-hover:opacity-40 transition-opacity" />
+                                    <div className="relative w-32 h-32 rounded-full border-4 border-white shadow-2xl overflow-hidden cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                                        <img
+                                            src={previewAvatar || `https://ui-avatars.com/api/?name=${user?.name}&background=random`}
+                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                            alt="Avatar Preview"
+                                        />
+                                        <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                            <CameraIcon className="w-8 h-8 text-white" />
+                                        </div>
+                                    </div>
+                                    <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
                                 </div>
-                            </div>
-                            <div className="text-center sm:text-left">
-                                <h3 className="font-bold text-slate-900">Profile Photo</h3>
-                                <p className="text-xs text-slate-500 mt-1 mb-3">Recommended: Square JPG, PNG. Max 1MB.</p>
-                                <label className="btn-secondary px-4 py-2 cursor-pointer text-sm inline-block">
-                                    Upload New Photo
-                                    <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
-                                </label>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="md:col-span-2">
-                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Display Name</label>
-                                <input
-                                    name="name"
-                                    value={formData.name}
-                                    onChange={handleChange}
-                                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-medium text-slate-900 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
-                                    required
-                                />
-                            </div>
-
-                            <div className="md:col-span-2">
-                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Username</label>
-                                <div className="relative">
-                                    <span className="absolute left-4 top-3.5 text-slate-400 font-bold">@</span>
-                                    <input
-                                        name="username"
-                                        value={formData.username}
-                                        onChange={handleChange}
-                                        placeholder="username"
-                                        className="w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-4 py-3 font-medium text-slate-900 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
-                                    />
+                                
+                                <div className="flex-1 text-center md:text-left space-y-3">
+                                    <h3 className="text-xl font-bold text-slate-900">Portrait Identity</h3>
+                                    <p className="text-sm text-slate-500 max-w-sm">Upload a high-fidelity image to stand out in discussions. JPG or PNG preferred.</p>
+                                    <button
+                                        type="button"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="bg-white hover:bg-slate-50 text-slate-900 text-xs font-black uppercase px-6 py-2.5 rounded-xl border border-slate-200 shadow-sm transition-all"
+                                    >
+                                        Select New Media
+                                    </button>
                                 </div>
                             </div>
 
-                            <div>
-                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Job Title</label>
-                                <input
-                                    name="jobTitle"
-                                    value={formData.jobTitle}
-                                    onChange={handleChange}
-                                    placeholder="e.g. Senior Developer"
-                                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-medium text-slate-900 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
-                                />
-                            </div>
+                            {/* Form Fields */}
+                            <div className="p-8 md:p-12 space-y-10">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    
+                                    {/* Name Field */}
+                                    <div className="space-y-2">
+                                        <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">
+                                            <UserIcon className="w-3 h-3" />
+                                            Professional Name
+                                        </label>
+                                        <input
+                                            name="name"
+                                            value={formData.name}
+                                            onChange={handleChange}
+                                            className="w-full bg-slate-50/50 border border-slate-200/60 rounded-2xl px-5 py-4 font-bold text-slate-900 focus:bg-white focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition-all outline-none"
+                                            required
+                                        />
+                                    </div>
 
-                            <div>
-                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Company</label>
-                                <input
-                                    name="company"
-                                    value={formData.company}
-                                    onChange={handleChange}
-                                    placeholder="e.g. Acme Corp"
-                                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-medium text-slate-900 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
-                                />
-                            </div>
+                                    {/* Username Field */}
+                                    <div className="space-y-2">
+                                        <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">
+                                            <SparklesIcon className="w-3 h-3" />
+                                            Unique Handle
+                                        </label>
+                                        <div className="relative">
+                                            <span className="absolute left-5 top-1/2 -translate-y-1/2 text-cyan-600 font-black">@</span>
+                                            <input
+                                                name="username"
+                                                value={formData.username}
+                                                onChange={handleChange}
+                                                className="w-full bg-slate-50/50 border border-slate-200/60 rounded-2xl pl-10 pr-5 py-4 font-bold text-slate-900 focus:bg-white focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition-all outline-none"
+                                            />
+                                        </div>
+                                    </div>
 
-                            <div className="md:col-span-2">
-                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Bio</label>
-                                <textarea
-                                    name="bio"
-                                    value={formData.bio}
-                                    onChange={handleChange}
-                                    rows={4}
-                                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-medium text-slate-900 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none resize-none"
-                                    placeholder="Tell the community about yourself..."
-                                />
-                            </div>
+                                    {/* Role Field */}
+                                    <div className="space-y-2">
+                                        <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">
+                                            <BriefcaseIcon className="w-3 h-3" />
+                                            Current Vocation
+                                        </label>
+                                        <input
+                                            name="jobTitle"
+                                            value={formData.jobTitle}
+                                            onChange={handleChange}
+                                            placeholder="e.g. Lead Product Architect"
+                                            className="w-full bg-slate-50/50 border border-slate-200/60 rounded-2xl px-5 py-4 font-bold text-slate-900 focus:bg-white focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition-all outline-none"
+                                        />
+                                    </div>
 
-                            <div className="md:col-span-2">
-                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Skills</label>
-                                <input
-                                    name="skills"
-                                    value={formData.skills}
-                                    onChange={handleChange}
-                                    placeholder="React, Node.js, UX Design (comma separated)"
-                                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-medium text-slate-900 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
-                                />
-                                <p className="text-xs text-slate-500 mt-2">Separate skills with commas. These will appear as tags on your profile.</p>
-                            </div>
+                                    {/* Location Field */}
+                                    <div className="space-y-2">
+                                        <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">
+                                            <MapPinIcon className="w-3 h-3" />
+                                            Geo Base
+                                        </label>
+                                        <input
+                                            name="location"
+                                            value={formData.location}
+                                            onChange={handleChange}
+                                            placeholder="e.g. Remote, Earth"
+                                            className="w-full bg-slate-50/50 border border-slate-200/60 rounded-2xl px-5 py-4 font-bold text-slate-900 focus:bg-white focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition-all outline-none"
+                                        />
+                                    </div>
 
-                            <div>
-                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Location</label>
-                                <input
-                                    name="location"
-                                    value={formData.location}
-                                    onChange={handleChange}
-                                    placeholder="e.g. San Francisco"
-                                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-medium text-slate-900 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
-                                />
-                            </div>
+                                    {/* Bio Field */}
+                                    <div className="md:col-span-2 space-y-2">
+                                        <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">
+                                            <PencilIcon className="w-3 h-3" />
+                                            The Narrative
+                                        </label>
+                                        <textarea
+                                            name="bio"
+                                            value={formData.bio}
+                                            onChange={handleChange}
+                                            rows={4}
+                                            className="w-full bg-slate-50/50 border border-slate-200/60 rounded-2xl px-5 py-4 font-bold text-slate-900 focus:bg-white focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition-all outline-none resize-none"
+                                            placeholder="Synthesize your professional journey..."
+                                        />
+                                    </div>
 
-                            <div>
-                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Website</label>
-                                <input
-                                    name="website"
-                                    value={formData.website}
-                                    onChange={handleChange}
-                                    placeholder="https://your-portfolio.com"
-                                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-medium text-slate-900 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
-                                />
-                            </div>
-                        </div>
-
-                        {/* Social Profiles */}
-                        <div className="pt-6 border-t border-slate-100">
-                            <h3 className="font-bold text-slate-900 mb-4">Social Profiles</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">GitHub URL</label>
-                                    <input name="github" value={formData.github} onChange={handleChange} placeholder="https://github.com/..." className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-medium text-slate-900 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none" />
+                                    {/* Skills Field */}
+                                    <div className="md:col-span-2 space-y-2">
+                                        <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">
+                                            <SparklesIcon className="w-3 h-3" />
+                                            Core Proficiencies
+                                        </label>
+                                        <input
+                                            name="skills"
+                                            value={formData.skills}
+                                            onChange={handleChange}
+                                            placeholder="React, Distributed Systems, Strategy (comma separated)"
+                                            className="w-full bg-slate-50/50 border border-slate-200/60 rounded-2xl px-5 py-4 font-bold text-slate-900 focus:bg-white focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition-all outline-none"
+                                        />
+                                    </div>
                                 </div>
-                                <div>
-                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">LinkedIn URL</label>
-                                    <input name="linkedin" value={formData.linkedin} onChange={handleChange} placeholder="https://linkedin.com/in/..." className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-medium text-slate-900 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none" />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">LeetCode URL</label>
-                                    <input name="leetcode" value={formData.leetcode} onChange={handleChange} placeholder="https://leetcode.com/..." className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-medium text-slate-900 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none" />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Stack Overflow URL</label>
-                                    <input name="stackoverflow" value={formData.stackoverflow} onChange={handleChange} placeholder="https://stackoverflow.com/..." className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-medium text-slate-900 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none" />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Medium URL</label>
-                                    <input name="medium" value={formData.medium} onChange={handleChange} placeholder="https://medium.com/..." className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-medium text-slate-900 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none" />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Twitter / X URL</label>
-                                    <input name="twitter" value={formData.twitter} onChange={handleChange} placeholder="https://x.com/..." className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-medium text-slate-900 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none" />
-                                </div>
                             </div>
-                        </div>
+                        </motion.div>
 
-                        <div className="pt-6 border-t border-slate-100 flex items-center justify-end gap-3">
+                        {/* Social Connect Glass Card */}
+                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-white/70 backdrop-blur-2xl border border-white rounded-[2.5rem] shadow-xl p-8 md:p-12 space-y-8">
+                            <div className="flex items-center gap-3 mb-2">
+                                <LinkIcon className="w-5 h-5 text-indigo-600" />
+                                <h3 className="text-xl font-bold text-slate-900">Network Matrix</h3>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                {[
+                                    { name: 'github', label: 'GitHub Ecosystem', placeholder: 'https://github.com/...' },
+                                    { name: 'linkedin', label: 'Professional Graph', placeholder: 'https://linkedin.com/in/...' },
+                                    { name: 'leetcode', label: 'Algorithmic Profile', placeholder: 'https://leetcode.com/...' },
+                                    { name: 'twitter', label: 'Social Echo (X)', placeholder: 'https://x.com/...' }
+                                ].map((field) => (
+                                    <div key={field.name} className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">{field.label}</label>
+                                        <input
+                                            name={field.name}
+                                            value={(formData as any)[field.name]}
+                                            onChange={handleChange}
+                                            placeholder={field.placeholder}
+                                            className="w-full bg-slate-50/50 border border-slate-200/60 rounded-2xl px-5 py-4 font-bold text-slate-900 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        </motion.div>
+
+                        {/* Action Buttons */}
+                        <div className="flex flex-col sm:flex-row items-center justify-end gap-6 pt-4">
                             <button
                                 type="button"
                                 onClick={() => navigate(-1)}
-                                className="px-6 py-3 rounded-xl text-slate-600 font-bold hover:bg-slate-50 transition-colors"
+                                className="text-sm font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-colors"
                             >
-                                Cancel
+                                Abandon Changes
                             </button>
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="btn-primary px-8 py-3 rounded-xl shadow-lg shadow-cyan-500/30 text-white font-bold"
+                                className="w-full sm:w-auto bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white text-sm font-black uppercase tracking-[0.2em] px-12 py-5 rounded-2xl shadow-2xl shadow-cyan-500/25 transition-all transform hover:scale-105 active:scale-95 disabled:opacity-50"
                             >
-                                {loading ? 'Saving Changes...' : 'Save Profile'}
+                                {loading ? 'Saving Metadata...' : 'Finalize Profile'}
                             </button>
                         </div>
                     </form>
