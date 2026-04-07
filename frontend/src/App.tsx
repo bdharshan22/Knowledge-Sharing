@@ -127,6 +127,8 @@ function PageLoader() {
   );
 }
 
+import ProtectedRoute from './components/ProtectedRoute';
+
 // ── Root App ────────────────────────────────────────────────────────────────────
 function App() {
   return (
@@ -140,21 +142,21 @@ function App() {
             <Route path="/register"    element={<Register />} />
             <Route path="/signup"      element={<Signup />} />
 
-            {/* Main App */}
-            <Route path="/dashboard"   element={<KnowledgeFeed />} />
-            <Route path="/feed"        element={<KnowledgeFeed />} />
+            {/* Main App - Protected */}
+            <Route path="/dashboard"   element={<ProtectedRoute><KnowledgeFeed /></ProtectedRoute>} />
+            <Route path="/feed"        element={<ProtectedRoute><KnowledgeFeed /></ProtectedRoute>} />
             <Route path="/home"        element={<LandingPage />} />
             <Route path="/search"      element={<SearchPage />} />
 
             {/* Posts */}
             <Route path="/posts/:id"       element={<PostDetail />} />
-            <Route path="/create-post"     element={<CreatePost />} />
-            <Route path="/my-posts"        element={<MyPosts />} />
+            <Route path="/create-post"     element={<ProtectedRoute><CreatePost /></ProtectedRoute>} />
+            <Route path="/my-posts"        element={<ProtectedRoute><MyPosts /></ProtectedRoute>} />
 
             {/* Users */}
             <Route path="/users/:id"       element={<Profile />} />
             <Route path="/profile"         element={<Profile />} />
-            <Route path="/settings/profile" element={<EditProfile />} />
+            <Route path="/settings/profile" element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
 
             {/* Learning */}
             <Route path="/learning-paths"  element={<LearningPaths />} />
@@ -171,9 +173,9 @@ function App() {
             <Route path="/community"       element={<Community />} />
             <Route path="/leaderboard"     element={<Leaderboard />} />
 
-            {/* User content */}
-            <Route path="/bookmarks"       element={<Bookmarks />} />
-            <Route path="/collections"     element={<Collections />} />
+            {/* User content - Protected */}
+            <Route path="/bookmarks"       element={<ProtectedRoute><Bookmarks /></ProtectedRoute>} />
+            <Route path="/collections"     element={<ProtectedRoute><Collections /></ProtectedRoute>} />
 
             {/* Admin */}
             <Route path="/moderation"      element={<ModerationQueue />} />

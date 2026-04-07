@@ -1,15 +1,27 @@
+import type { ReactNode } from 'react';
 import { useContext } from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 
-const ProtectedRoute = () => {
+/**
+ * A wrapper component that redirects users to the login page
+ * if they are not authenticated.
+ */
+const ProtectedRoute = ({ children }: { children: ReactNode }) => {
     const auth = useContext(AuthContext);
+    const location = useLocation();
 
     if (auth?.loading) {
-        return <div>Loading...</div>;
+        // Return nothing or a small spinner while checking auth status
+        return null;
     }
 
-    return auth?.user ? <Outlet /> : <Navigate to="/login" replace />;
+    if (!auth?.user) {
+        // Redirect to login but save the current location they tried to access
+        return <Navigate to="/login" state={{ from: location }} replace />;
+    }
+
+    return children;
 };
 
 export default ProtectedRoute;
