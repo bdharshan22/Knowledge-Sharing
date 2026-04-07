@@ -82,6 +82,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (logoutTimer) clearTimeout(logoutTimer);
       logoutTimer = setTimeout(() => {
         logout();
+        window.location.href = '/'; // Global redirect to landing on auto-logout
       }, LIMIT * 1000);
     };
 
@@ -89,11 +90,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const elapsed = Math.floor((Date.now() - lastActivity) / 1000);
       const remaining = Math.max(0, LIMIT - elapsed);
       setSecondsRemaining(remaining);
-      if (remaining === 0) logout();
+      if (remaining === 0) {
+        logout();
+        window.location.href = '/'; // Global redirect
+      }
     };
 
     countdownInterval = setInterval(countdown, 1000);
-    logoutTimer = setTimeout(() => logout(), LIMIT * 1000);
+    logoutTimer = setTimeout(() => {
+        logout();
+        window.location.href = '/';
+    }, LIMIT * 1000);
     setSecondsRemaining(LIMIT);
 
     const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];

@@ -10,6 +10,7 @@ interface NavbarProps {
 }
 
 const DEFAULT_LINKS = [
+    { to: '/dashboard', label: 'Feed', icon: '📚' },
     { to: '/learning-paths', label: 'Learning Paths', icon: '🗺️' },
     { to: '/projects', label: 'Projects', icon: '🚀' },
     { to: '/events', label: 'Events', icon: '📅' },
