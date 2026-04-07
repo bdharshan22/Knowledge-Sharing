@@ -95,7 +95,6 @@ const Navbar = ({ forceWhite, links = DEFAULT_LINKS }: NavbarProps) => {
                         }} 
                     />
                     <span 
-                        className="hidden-mobile-xs"
                         style={{
                             fontWeight: 800, fontSize: '1.05rem',
                             background: 'linear-gradient(135deg, #f8fafc, #94a3b8)',
@@ -473,9 +472,6 @@ const Navbar = ({ forceWhite, links = DEFAULT_LINKS }: NavbarProps) => {
                 @media (max-width: 859px) {
                     .hidden-mobile { display: none !important; }
                     .show-mobile { display: flex !important; }
-                }
-                @media (max-width: 480px) {
-                    .hidden-mobile-xs { display: none !important; }
                 }
             `}</style>
         </motion.nav>
