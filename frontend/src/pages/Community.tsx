@@ -150,9 +150,12 @@ const Community = () => {
 
             {/* Mobile Sidebar Toggle */}
             <div style={{ display: 'none', padding: '1rem 1.5rem 0' }} className="mobile-only-flex">
-                <button onClick={() => setShowRightSidebar(true)} style={{ width: '100%', padding: '0.875rem', background: C.card, border: `1px solid ${C.border}`, borderRadius: '0.875rem', fontWeight: 700, color: C.t1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.625rem' }}>
+                <button onClick={() => setShowRightSidebar(true)} style={{ width: '100%', padding: '0.9rem', background: C.card, border: `1px solid ${C.border}`, borderRadius: '1rem', fontWeight: 700, color: C.t1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
                     📊 Community Insights & Polls
-                    <motion.span animate={{ scale: [1, 1.15, 1] }} transition={{ repeat: Infinity, duration: 2.5 }} style={{ fontSize: '0.6rem', padding: '0.15rem 0.5rem', borderRadius: '0.4rem', background: 'linear-gradient(135deg, #06b6d4, #6366f1)', color: '#fff', fontWeight: 800, textTransform: 'uppercase' }}>Check it!</motion.span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', background: '#f0fdf4', padding: '0.2rem 0.625rem', borderRadius: '99px', border: '1px solid #bbf7d0' }}>
+                         <motion.div animate={{ scale: [1, 1.6, 1], opacity: [1, 0.4, 1] }} transition={{ repeat: Infinity, duration: 2 }} style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px rgba(16,185,129,0.6)' }} />
+                         <span style={{ fontSize: '0.6rem', fontWeight: 800, color: '#166534', letterSpacing: '0.04em' }}>LIVE NOW</span>
+                    </div>
                 </button>
             </div>
 

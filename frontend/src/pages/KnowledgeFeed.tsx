@@ -265,13 +265,19 @@ const KnowledgeFeed = () => {
 
                 {/* ── Mobile Sidebar Toggles ── */}
                 <div style={{ display: 'none', gap: '1rem', marginBottom: '1.5rem', position: 'relative' }} className="mobile-only-flex">
-                    <button onClick={() => setShowLeftSidebar(true)} style={{ flex: 1, padding: '0.875rem', background: card, border: `1px solid ${border}`, borderRadius: '0.75rem', fontWeight: 700, color: txt1, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                    <button onClick={() => setShowLeftSidebar(true)} style={{ flex: 1, padding: '0.9rem', background: card, border: `1px solid ${border}`, borderRadius: '1rem', fontWeight: 700, color: txt1, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.625rem', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
                         👤 Profile
-                        <motion.span animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 2 }} style={{ fontSize: '0.6rem', padding: '0.15rem 0.4rem', borderRadius: '0.4rem', background: '#ec4899', color: '#fff', fontWeight: 800, textTransform: 'uppercase' }}>Check it!</motion.span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', background: '#f1f5f9', padding: '0.2rem 0.625rem', borderRadius: '99px', border: `1px solid ${border}` }}>
+                             <motion.div animate={{ scale: [1, 1.5, 1], opacity: [1, 0.5, 1] }} transition={{ repeat: Infinity, duration: 2 }} style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px rgba(16,185,129,0.5)' }} />
+                             <span style={{ fontSize: '0.6rem', fontWeight: 800, color: txt2, letterSpacing: '0.04em' }}>LIVE</span>
+                        </div>
                     </button>
-                    <button onClick={() => setShowRightSidebar(true)} style={{ flex: 1, padding: '0.875rem', background: card, border: `1px solid ${border}`, borderRadius: '0.75rem', fontWeight: 700, color: txt1, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                    <button onClick={() => setShowRightSidebar(true)} style={{ flex: 1, padding: '0.9rem', background: card, border: `1px solid ${border}`, borderRadius: '1rem', fontWeight: 700, color: txt1, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.625rem', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
                         📊 Stats
-                        <motion.span animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 2, delay: 0.5 }} style={{ fontSize: '0.6rem', padding: '0.15rem 0.4rem', borderRadius: '0.4rem', background: '#06b6d4', color: '#fff', fontWeight: 800, textTransform: 'uppercase' }}>Check it!</motion.span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', background: '#f1f5f9', padding: '0.2rem 0.625rem', borderRadius: '99px', border: `1px solid ${border}` }}>
+                             <motion.div animate={{ scale: [1, 1.5, 1], opacity: [1, 0.5, 1] }} transition={{ repeat: Infinity, duration: 2, delay: 0.5 }} style={{ width: 6, height: 6, borderRadius: '50%', background: '#6366f1', boxShadow: '0 0 8px rgba(99,102,241,0.5)' }} />
+                             <span style={{ fontSize: '0.6rem', fontWeight: 800, color: txt2, letterSpacing: '0.04em' }}>ACTIVE</span>
+                        </div>
                     </button>
                 </div>
 
