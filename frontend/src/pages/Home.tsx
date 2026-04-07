@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { motion } from 'framer-motion';
+import Navbar from '../components/AppNavbar';
 
 const features = [
   {
@@ -130,61 +131,10 @@ function Home() {
       </div>
 
       {/* ─── NAVBAR ─── */}
-      <nav className="glass-nav" style={{ position: 'sticky', top: 0, zIndex: 50 }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 1.5rem', height: '72px' }}>
-          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none' }}>
-            <div style={{
-              width: 42, height: 42, borderRadius: '12px',
-              background: 'linear-gradient(135deg, #06b6d4, #6366f1)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontWeight: 800, color: '#fff', fontSize: '1.1rem',
-              boxShadow: '0 0 20px rgba(6,182,212,0.4)'
-            }}>KS</div>
-            <span style={{
-              fontWeight: 800, fontSize: '1.2rem',
-              background: 'linear-gradient(135deg, #67e8f9, #a5b4fc)',
-              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-              fontFamily: '"Space Grotesk", sans-serif'
-            }}>KnowledgeShare</span>
-          </Link>
-
-          <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
-            {[
-              { href: '#features', label: 'Features' },
-              { href: '#stats', label: 'Impact' },
-            ].map(item => (
-              <a key={item.href} href={item.href} style={{
-                color: '#64748b', textDecoration: 'none', fontWeight: 600,
-                fontSize: '0.9rem', transition: 'color 0.2s'
-              }}
-              onMouseEnter={e => e.currentTarget.style.color = '#67e8f9'}
-              onMouseLeave={e => e.currentTarget.style.color = '#64748b'}>
-                {item.label}
-              </a>
-            ))}
-
-            {user ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', borderLeft: '1px solid rgba(100,160,255,0.15)', paddingLeft: '1.5rem', marginLeft: '0.5rem' }}>
-                <span style={{ color: '#64748b', fontSize: '0.9rem' }}>
-                  Hey, <span style={{ color: '#67e8f9', fontWeight: 700 }}>{user.name?.split(' ')[0]}</span>
-                </span>
-                <button onClick={() => navigate('/dashboard')} className="btn-primary" style={{ padding: '0.6rem 1.5rem' }}>
-                  <span>Dashboard</span>
-                </button>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', gap: '0.75rem', borderLeft: '1px solid rgba(100,160,255,0.15)', paddingLeft: '1.5rem', marginLeft: '0.5rem' }}>
-                <button onClick={() => navigate('/login')} className="btn-ghost">
-                  Log in
-                </button>
-                <button onClick={() => navigate('/register')} className="btn-primary" style={{ padding: '0.6rem 1.5rem' }}>
-                  <span>Get Started</span>
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </nav>
+      <Navbar links={[
+          { to: '#features', label: 'Features', isAnchor: true, icon: '⚡' },
+          { to: '#stats', label: 'Impact', isAnchor: true, icon: '📈' },
+      ]} />
 
       {/* ─── HERO SECTION ─── */}
       <section ref={heroRef} style={{ minHeight: '90vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '6rem 1.5rem 4rem', position: 'relative', zIndex: 10 }}>
@@ -498,7 +448,7 @@ function Home() {
               </Link>
             ))}
           </div>
-          <p>© {new Date().getFullYear()} KnowledgeShare Portal — Engineered for teams that win.</p>
+          <p>© {new Date().getFullYear()} Knowledge Share Portal — Engineered for teams that win.</p>
         </div>
       </footer>
     </div>

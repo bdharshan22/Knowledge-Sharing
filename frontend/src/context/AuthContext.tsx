@@ -58,6 +58,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setLoading(false);
   }, []);
 
+  // ── Auto Logout Logic (2 minutes) ─────────────────────────────────────────────
+  useEffect(() => {
+    if (!user) return;
+
+    let logoutTimer: any;
+
+    const resetTimer = () => {
+      if (logoutTimer) clearTimeout(logoutTimer);
+      // Set timer to 2 minutes (120,000ms)
+      logoutTimer = setTimeout(() => {
+        console.log('Inactivity detected. Logging out...');
+        logout();
+      }, 120000); 
+    };
+
+    // Events to track user activity
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+    events.forEach(event => window.addEventListener(event, resetTimer));
+
+    // Initialize timer
+    resetTimer();
+
+    return () => {
+      if (logoutTimer) clearTimeout(logoutTimer);
+      events.forEach(event => window.removeEventListener(event, resetTimer));
+    };
+  }, [user]);
+
   const login = (token: string, userData: User) => {
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(userData));

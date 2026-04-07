@@ -6,16 +6,17 @@ import favicon from '../assets/favicon.png';
 
 interface NavbarProps {
     forceWhite?: boolean;
+    links?: Array<{ to: string; label: string; icon?: string; isAnchor?: boolean }>;
 }
 
-const NAV_LINKS = [
+const DEFAULT_LINKS = [
     { to: '/learning-paths', label: 'Learning Paths', icon: '🗺️' },
     { to: '/projects', label: 'Projects', icon: '🚀' },
     { to: '/events', label: 'Events', icon: '📅' },
     { to: '/community', label: 'Community', icon: '💬' },
 ];
 
-const Navbar = (_props: NavbarProps) => {
+const Navbar = ({ forceWhite, links = DEFAULT_LINKS }: NavbarProps) => {
     const auth = useContext(AuthContext);
     const user = auth?.user;
     const logout = auth?.logout || (() => { });
@@ -62,12 +63,12 @@ const Navbar = (_props: NavbarProps) => {
                 position: 'fixed',
                 top: 0, left: 0, right: 0,
                 zIndex: 100,
-                background: scrolled
+                background: (scrolled || forceWhite)
                     ? 'rgba(2, 6, 23, 0.92)'
                     : 'rgba(2, 6, 23, 0.6)',
                 backdropFilter: 'blur(24px) saturate(180%)',
                 WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-                borderBottom: `1px solid ${scrolled ? 'rgba(100, 160, 255, 0.12)' : 'rgba(100, 160, 255, 0.06)'}`,
+                borderBottom: `1px solid ${(scrolled || forceWhite) ? 'rgba(100, 160, 255, 0.12)' : 'rgba(100, 160, 255, 0.06)'}`,
                 transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
             }}
         >
@@ -85,63 +86,93 @@ const Navbar = (_props: NavbarProps) => {
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between'
             }}>
                 {/* ─── Logo ─── */}
-                <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none', flexShrink: 0 }}>
+                <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', textDecoration: 'none', flexShrink: 0 }}>
                     <img 
                         src={favicon} 
-                        alt="KnowledgeShare" 
+                        alt="Logo" 
                         style={{ 
-                            width: 38, height: 38, borderRadius: '10px',
-                            boxShadow: '0 0 16px rgba(6,182,212,0.4)',
+                            width: 36, height: 36, borderRadius: '10px',
+                            boxShadow: '0 4px 12px rgba(6,182,212,0.3)',
                             objectFit: 'cover'
                         }} 
                     />
-                    <span style={{
-                        fontWeight: 800, fontSize: '1.1rem',
-                        background: 'linear-gradient(135deg, #e2e8f0, #94a3b8)',
-                        WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-                        fontFamily: '"Space Grotesk", sans-serif',
-                        letterSpacing: '-0.01em'
-                    }}>
-                        Knowledge<span style={{
+                    <span 
+                        className="hidden-mobile-xs"
+                        style={{
+                            fontWeight: 800, fontSize: '1.05rem',
+                            background: 'linear-gradient(135deg, #f8fafc, #94a3b8)',
+                            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                            fontFamily: '"Space Grotesk", sans-serif',
+                            letterSpacing: '-0.02em',
+                        }}
+                    >
+                        Knowledge <span style={{
                             background: 'linear-gradient(135deg, #06b6d4, #6366f1)',
                             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'
-                        }}>Portal</span>
+                        }}>Share</span>
                     </span>
                 </Link>
 
                 {/* ─── Desktop Nav ─── */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }} className="hidden-mobile">
-                    {NAV_LINKS.map(link => (
-                        <Link
-                            key={link.to}
-                            to={link.to}
-                            style={{
-                                display: 'flex', alignItems: 'center', gap: '0.375rem',
-                                padding: '0.5rem 0.875rem',
-                                borderRadius: '0.625rem',
-                                fontSize: '0.875rem', fontWeight: 600,
-                                textDecoration: 'none',
-                                transition: 'all 0.2s ease',
-                                color: isActive(link.to) ? '#06b6d4' : '#64748b',
-                                background: isActive(link.to) ? 'rgba(6,182,212,0.1)' : 'transparent',
-                            }}
-                            onMouseEnter={e => {
-                                if (!isActive(link.to)) {
+                    {links.map(link => (
+                        link.isAnchor ? (
+                            <a
+                                key={link.to}
+                                href={link.to}
+                                style={{
+                                    display: 'flex', alignItems: 'center', gap: '0.375rem',
+                                    padding: '0.5rem 0.875rem',
+                                    borderRadius: '0.625rem',
+                                    fontSize: '0.875rem', fontWeight: 600,
+                                    textDecoration: 'none',
+                                    transition: 'all 0.2s ease',
+                                    color: '#64748b',
+                                    background: 'transparent',
+                                }}
+                                onMouseEnter={e => {
                                     e.currentTarget.style.color = '#94a3b8';
                                     e.currentTarget.style.background = 'rgba(100,160,255,0.06)';
-                                }
-                            }}
-                            onMouseLeave={e => {
-                                if (!isActive(link.to)) {
+                                }}
+                                onMouseLeave={e => {
                                     e.currentTarget.style.color = '#64748b';
                                     e.currentTarget.style.background = 'transparent';
-                                }
-                            }}
-                        >
-                            {link.label}
-                        </Link>
+                                }}
+                            >
+                                {link.label}
+                            </a>
+                        ) : (
+                            <Link
+                                key={link.to}
+                                to={link.to}
+                                style={{
+                                    display: 'flex', alignItems: 'center', gap: '0.375rem',
+                                    padding: '0.5rem 0.875rem',
+                                    borderRadius: '0.625rem',
+                                    fontSize: '0.875rem', fontWeight: 600,
+                                    textDecoration: 'none',
+                                    transition: 'all 0.2s ease',
+                                    color: isActive(link.to) ? '#06b6d4' : '#64748b',
+                                    background: isActive(link.to) ? 'rgba(6,182,212,0.1)' : 'transparent',
+                                }}
+                                onMouseEnter={e => {
+                                    if (!isActive(link.to)) {
+                                        e.currentTarget.style.color = '#94a3b8';
+                                        e.currentTarget.style.background = 'rgba(100,160,255,0.06)';
+                                    }
+                                }}
+                                onMouseLeave={e => {
+                                    if (!isActive(link.to)) {
+                                        e.currentTarget.style.color = '#64748b';
+                                        e.currentTarget.style.background = 'transparent';
+                                    }
+                                }}
+                            >
+                                {link.label}
+                            </Link>
+                        )
                     ))}
-                    {isModerator && (
+                    {isModerator && !links.find(l => l.to === '/moderation') && (
                         <Link to="/moderation" style={{
                             display: 'flex', alignItems: 'center', gap: '0.375rem',
                             padding: '0.5rem 0.875rem', borderRadius: '0.625rem',
@@ -349,19 +380,34 @@ const Navbar = (_props: NavbarProps) => {
                         }}
                     >
                         <div style={{ padding: '1rem 1.5rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
-                            {NAV_LINKS.map(link => (
-                                <Link key={link.to} to={link.to}
-                                    style={{
-                                        display: 'flex', alignItems: 'center', gap: '0.75rem',
-                                        padding: '0.75rem 1rem', borderRadius: '0.75rem',
-                                        fontSize: '0.95rem', fontWeight: 600, textDecoration: 'none',
-                                        color: isActive(link.to) ? '#06b6d4' : '#64748b',
-                                        background: isActive(link.to) ? 'rgba(6,182,212,0.1)' : 'transparent',
-                                        transition: 'all 0.2s ease'
-                                    }}>
-                                    <span>{link.icon}</span>
-                                    {link.label}
-                                </Link>
+                            {links.map(link => (
+                                link.isAnchor ? (
+                                    <a key={link.to} href={link.to} onClick={() => setIsMenuOpen(false)}
+                                        style={{
+                                            display: 'flex', alignItems: 'center', gap: '0.75rem',
+                                            padding: '0.75rem 1rem', borderRadius: '0.75rem',
+                                            fontSize: '0.95rem', fontWeight: 600, textDecoration: 'none',
+                                            color: '#64748b',
+                                            background: 'transparent',
+                                            transition: 'all 0.2s ease'
+                                        }}>
+                                        <span>{link.icon || '✦'}</span>
+                                        {link.label}
+                                    </a>
+                                ) : (
+                                    <Link key={link.to} to={link.to} onClick={() => setIsMenuOpen(false)}
+                                        style={{
+                                            display: 'flex', alignItems: 'center', gap: '0.75rem',
+                                            padding: '0.75rem 1rem', borderRadius: '0.75rem',
+                                            fontSize: '0.95rem', fontWeight: 600, textDecoration: 'none',
+                                            color: isActive(link.to) ? '#06b6d4' : '#64748b',
+                                            background: isActive(link.to) ? 'rgba(6,182,212,0.1)' : 'transparent',
+                                            transition: 'all 0.2s ease'
+                                        }}>
+                                        <span>{link.icon || '✦'}</span>
+                                        {link.label}
+                                    </Link>
+                                )
                             ))}
 
                             <div style={{ height: 1, background: 'rgba(100,160,255,0.08)', margin: '0.5rem 0' }} />
@@ -394,13 +440,16 @@ const Navbar = (_props: NavbarProps) => {
             </AnimatePresence>
 
             <style>{`
-                @media (min-width: 768px) {
+                @media (min-width: 860px) {
                     .hidden-mobile { display: flex !important; }
                     .show-mobile { display: none !important; }
                 }
-                @media (max-width: 767px) {
+                @media (max-width: 859px) {
                     .hidden-mobile { display: none !important; }
                     .show-mobile { display: flex !important; }
+                }
+                @media (max-width: 480px) {
+                    .hidden-mobile-xs { display: none !important; }
                 }
             `}</style>
         </motion.nav>
