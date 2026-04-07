@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from '../components/AppNavbar';
 import PollWidget from '../components/PollWidget';
 import { AuthContext } from '../context/AuthContext';
+import { toast } from 'react-hot-toast';
 
 const C = { bg: '#f8fafc', card: '#ffffff', border: '#e2e8f0', t1: '#0f172a', t2: '#475569', t3: '#94a3b8', accent: '#6366f1' };
 const ROOM_ICONS = ['🚀', '💡', '🔬', '🛡️', '🎨', '📊', '💬', '⚡', '🌐', '🧠'];
@@ -13,7 +14,7 @@ const ROOM_GRADIENTS = [
     'linear-gradient(135deg, #f0fdf4, #dcfce7)',
     'linear-gradient(135deg, #faf5ff, #ede9fe)',
     'linear-gradient(135deg, #fff7ed, #fed7aa)',
-    'linear-gradient(135deg, #fdf2f8, #fbcfe8)',
+    'linear-gradient(135deg, #fdf2e8, #fbcfe8)',
     'linear-gradient(135deg, #fefce8, #fef08a)',
     'linear-gradient(135deg, #eff6ff, #bfdbfe)',
     'linear-gradient(135deg, #f0fdfa, #99f6e4)',
@@ -27,6 +28,7 @@ const Community = () => {
     const [loading, setLoading] = useState(true);
     const [searchRoom, setSearchRoom] = useState('');
     const [creatingRoom, setCreatingRoom] = useState(false);
+    const [showRightSidebar, setShowRightSidebar] = useState(false);
 
     const fetchData = async () => {
         try {
@@ -41,6 +43,20 @@ const Community = () => {
     };
 
     useEffect(() => { fetchData(); }, []);
+
+    const handleDeleteRoom = async (e: React.MouseEvent, roomId: string) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!user) return;
+        if (!window.confirm('Delete this community room? This action cannot be undone.')) return;
+        try {
+            await api.delete(`/community/rooms/${roomId}`);
+            toast.success('Room deleted successfully');
+            fetchData();
+        } catch {
+            toast.error('Failed to delete room. You may not have permission.');
+        }
+    };
 
     const handleCreatePoll = async () => {
         if (!user) return alert('Login required');
@@ -80,8 +96,13 @@ const Community = () => {
         !searchRoom || r.name?.toLowerCase().includes(searchRoom.toLowerCase()) || r.description?.toLowerCase().includes(searchRoom.toLowerCase())
     );
 
+    const sidebarVariants = {
+        hidden: { x: 300, opacity: 0 },
+        visible: { x: 0, opacity: 1 }
+    };
+
     return (
-        <div style={{ minHeight: '100vh', background: C.bg, fontFamily: '"Inter", sans-serif' }}>
+        <div style={{ minHeight: '100vh', background: C.bg, fontFamily: '"Inter", sans-serif', overflowX: 'hidden' }}>
             <Navbar />
             <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 3, background: 'linear-gradient(to right, #06b6d4, #6366f1, #a855f7)', zIndex: 99 }} />
 
@@ -127,8 +148,15 @@ const Community = () => {
                 </div>
             </div>
 
+            {/* Mobile Sidebar Toggle */}
+            <div style={{ display: 'none', padding: '1rem 1.5rem 0' }} className="mobile-only-flex">
+                <button onClick={() => setShowRightSidebar(true)} style={{ width: '100%', padding: '0.875rem', background: C.card, border: `1px solid ${C.border}`, borderRadius: '0.875rem', fontWeight: 700, color: C.t1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                    📊 Community Insights & Polls
+                </button>
+            </div>
+
             {/* Main content */}
-            <div style={{ maxWidth: 1200, margin: '0 auto', padding: '2.5rem 1.5rem', display: 'grid', gridTemplateColumns: '1fr 340px', gap: '2rem', alignItems: 'start' }}>
+            <div style={{ maxWidth: 1200, margin: '0 auto', padding: '2.5rem 1.5rem', display: 'grid', gridTemplateColumns: '1fr 340px', gap: '2rem', alignItems: 'start' }} className="community-grid">
 
                 {/* Left — Rooms */}
                 <div>
@@ -185,8 +213,19 @@ const Community = () => {
                                                     ))}
                                                 </div>
                                             </div>
-                                            <div style={{ width: 30, height: 30, borderRadius: '50%', flexShrink: 0, background: '#eff6ff', border: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.accent, alignSelf: 'center' }}>
-                                                <svg style={{ width: 14, height: 14 }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', alignSelf: 'center' }}>
+                                                {(user?.role === 'admin' || user?._id === room.creator) && (
+                                                    <button onClick={(e) => handleDeleteRoom(e, room._id)} 
+                                                        style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '0.375rem', borderRadius: '0.5rem', transition: 'background 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                        onMouseEnter={e => e.currentTarget.style.background = '#fee2e2'}
+                                                        onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                                                        title="Delete Room">
+                                                        <svg style={{ width: 18, height: 18 }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                    </button>
+                                                )}
+                                                <div style={{ width: 30, height: 30, borderRadius: '50%', flexShrink: 0, background: '#eff6ff', border: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.accent }}>
+                                                    <svg style={{ width: 14, height: 14 }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                                                </div>
                                             </div>
                                         </div>
                                     </Link>
@@ -197,79 +236,87 @@ const Community = () => {
                 </div>
 
                 {/* Right sidebar */}
-                <div style={{ position: 'sticky', top: '5.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-
-                    {/* Polls panel */}
-                    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: '1rem', overflow: 'hidden' }}>
-                        <div style={{ padding: '1rem 1.25rem', borderBottom: `1px solid ${C.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(135deg, #faf5ff, #eff6ff)' }}>
-                            <h2 style={{ fontWeight: 800, color: C.t1, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                🔥 Hot Polls
-                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.65rem', fontWeight: 700, color: '#10b981', background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '0.15rem 0.5rem', borderRadius: '999px' }}>
-                                    <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
-                                    Live
-                                </span>
-                            </h2>
-                            {user && (
-                                <button onClick={handleCreatePoll} style={{ background: 'none', border: 'none', color: C.accent, fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', padding: '0.25rem 0.5rem', borderRadius: '0.375rem', transition: 'background 0.15s' }}
-                                    onMouseEnter={e => e.currentTarget.style.background = '#eff6ff'}
-                                    onMouseLeave={e => e.currentTarget.style.background = 'none'}>
-                                    + New Poll
-                                </button>
-                            )}
-                        </div>
-                        <div style={{ padding: '1rem' }}>
-                            {polls.length === 0 ? (
-                                <div style={{ textAlign: 'center', padding: '2rem 1rem' }}>
-                                    <div style={{ fontSize: '2rem', marginBottom: '0.75rem' }}>📊</div>
-                                    <p style={{ color: C.t2, fontSize: '0.875rem', marginBottom: '0.75rem' }}>No active polls.</p>
-                                    {user && <button onClick={handleCreatePoll} style={{ background: 'none', border: 'none', color: C.accent, fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer' }}>Start the first poll →</button>}
+                <AnimatePresence>
+                    {(showRightSidebar || window.innerWidth >= 1101) && (
+                        <motion.div initial="hidden" animate="visible" exit="hidden" variants={sidebarVariants} transition={{ type: 'spring', damping: 25 }} className="right-sidebar-container" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                            <button className="mobile-only-flex" onClick={() => setShowRightSidebar(false)} style={{ width: '100%', padding: '0.875rem', background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '0.5rem', fontWeight: 700, marginBottom: '0.5rem', display: 'none' }}>Close Insights</button>
+                            
+                            {/* Polls panel */}
+                            <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: '1rem', overflow: 'hidden' }}>
+                                <div style={{ padding: '1rem 1.25rem', borderBottom: `1px solid ${C.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(135deg, #faf5ff, #eff6ff)' }}>
+                                    <h2 style={{ fontWeight: 800, color: C.t1, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        🔥 Hot Polls
+                                    </h2>
+                                    {user && (
+                                        <button onClick={handleCreatePoll} style={{ background: 'none', border: 'none', color: C.accent, fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}>+ New</button>
+                                    )}
                                 </div>
-                            ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-                                    {polls.slice(0, 3).map((poll: any) => (
-                                        <div key={poll._id} style={{ padding: '0.875rem', background: C.bg, borderRadius: '0.75rem', border: `1px solid ${C.border}` }}>
-                                            <PollWidget poll={poll} onVote={fetchData} />
+                                <div style={{ padding: '1rem' }}>
+                                    {polls.length === 0 ? (
+                                        <p style={{ color: C.t2, fontSize: '0.875rem', textAlign: 'center' }}>No active polls.</p>
+                                    ) : (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+                                            {polls.slice(0, 3).map((poll: any) => (
+                                                <div key={poll._id} style={{ padding: '0.875rem', background: C.bg, borderRadius: '0.75rem', border: `1px solid ${C.border}` }}>
+                                                    <PollWidget poll={poll} onVote={fetchData} />
+                                                </div>
+                                            ))}
                                         </div>
-                                    ))}
+                                    )}
                                 </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Community stats */}
-                    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: '1rem', padding: '1.25rem' }}>
-                        <h4 style={{ fontSize: '0.72rem', fontWeight: 800, color: C.accent, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>Community Stats</h4>
-                        {[
-                            { label: 'Active Rooms', value: rooms.length, icon: '💬', color: '#06b6d4' },
-                            { label: 'Live Polls', value: polls.length, icon: '📊', color: '#a855f7' },
-                            { label: 'Total Members', value: rooms.reduce((s: number, r: any) => s + (r.members?.length || 0), 0), icon: '👥', color: '#10b981' },
-                        ].map(stat => (
-                            <div key={stat.label} style={{ display: 'flex', alignItems: 'center', gap: '0.875rem', padding: '0.625rem 0', borderBottom: `1px solid ${C.border}` }}>
-                                <span style={{ fontSize: '1.1rem' }}>{stat.icon}</span>
-                                <span style={{ flex: 1, color: C.t2, fontSize: '0.875rem', fontWeight: 500 }}>{stat.label}</span>
-                                <span style={{ fontWeight: 900, color: stat.color, fontFamily: '"Space Grotesk", sans-serif', fontSize: '1rem' }}>{stat.value}</span>
                             </div>
-                        ))}
-                    </div>
 
-                    {/* Pro upgrade card */}
-                    <div style={{ borderRadius: '1rem', padding: '1.5rem', background: 'linear-gradient(135deg, #6366f1, #06b6d4)', position: 'relative', overflow: 'hidden' }}>
-                        <div style={{ position: 'absolute', top: -24, right: -24, width: 100, height: 100, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
-                        <div style={{ position: 'relative' }}>
-                            <div style={{ fontSize: '1.75rem', marginBottom: '0.625rem' }}>⚡</div>
-                            <h3 style={{ fontWeight: 800, color: '#fff', marginBottom: '0.375rem', fontSize: '0.975rem' }}>Pro Access</h3>
-                            <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.8rem', lineHeight: 1.6, marginBottom: '1rem' }}>
-                                Private channels, priority support & advanced analytics.
-                            </p>
-                            <button style={{ width: '100%', padding: '0.625rem', borderRadius: '0.625rem', background: 'rgba(255,255,255,0.2)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer', backdropFilter: 'blur(8px)' }}
-                                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
-                                onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}>
-                                Upgrade to Pro →
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                            {/* Community stats */}
+                            <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: '1rem', padding: '1.25rem' }}>
+                                <h4 style={{ fontSize: '0.72rem', fontWeight: 800, color: C.accent, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>Community Stats</h4>
+                                {[
+                                    { label: 'Active Rooms', value: rooms.length, icon: '💬', color: '#06b6d4' },
+                                    { label: 'Live Polls', value: polls.length, icon: '📊', color: '#a855f7' },
+                                    { label: 'Total Members', value: rooms.reduce((s: number, r: any) => s + (r.members?.length || 0), 0), icon: '👥', color: '#10b981' },
+                                ].map(stat => (
+                                    <div key={stat.label} style={{ display: 'flex', alignItems: 'center', gap: '0.875rem', padding: '0.625rem 0', borderBottom: `1px solid ${C.border}` }}>
+                                        <span style={{ fontSize: '1.1rem' }}>{stat.icon}</span>
+                                        <span style={{ flex: 1, color: C.t2, fontSize: '0.875rem', fontWeight: 500 }}>{stat.label}</span>
+                                        <span style={{ fontWeight: 900, color: stat.color, fontFamily: '"Space Grotesk", sans-serif', fontSize: '1rem' }}>{stat.value}</span>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Pro upgrade card */}
+                            <div style={{ borderRadius: '1rem', padding: '1.5rem', background: 'linear-gradient(135deg, #6366f1, #06b6d4)', position: 'relative', overflow: 'hidden' }}>
+                                <div style={{ position: 'absolute', top: -24, right: -24, width: 100, height: 100, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
+                                <div style={{ position: 'relative' }}>
+                                    <div style={{ fontSize: '1.75rem', marginBottom: '0.625rem' }}>⚡</div>
+                                    <h3 style={{ fontWeight: 800, color: '#fff', marginBottom: '0.375rem', fontSize: '0.975rem' }}>Pro Access</h3>
+                                    <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.8rem', lineHeight: 1.6, marginBottom: '1rem' }}>
+                                        Private channels & premium support.
+                                    </p>
+                                    <button style={{ width: '100%', padding: '0.625rem', borderRadius: '0.625rem', background: 'rgba(255,255,255,0.2)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer' }}>Upgrade →</button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
+
+            <style>{`
+                .community-grid { display: grid; grid-template-columns: 1fr 340px; gap: 2rem; align-items: start; }
+                @media (max-width: 1100px) {
+                    .community-grid { grid-template-columns: 1fr; }
+                    .right-sidebar-container { 
+                        position: fixed !important; top: 0; bottom: 0; right: 0; width: 300px !important; z-index: 1000; 
+                        background: ${C.card} !important; padding: 1.5rem !important; box-shadow: -10px 0 40px rgba(0,0,0,0.2) !important; overflow-y: auto; 
+                    }
+                    .mobile-only-flex { display: flex !important; }
+                }
+                @media (min-width: 1101px) {
+                    .right-sidebar-container { position: sticky !important; top: 6rem; }
+                }
+                @keyframes pulse {
+                    0%, 100% { opacity: 1; }
+                    50% { opacity: 0.5; }
+                }
+            `}</style>
         </div>
     );
 };
