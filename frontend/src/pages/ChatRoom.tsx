@@ -1,12 +1,15 @@
 import { useState, useEffect, useContext, useRef } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'react-hot-toast';
 import api from '../services/api';
-import { useParams, Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import Navbar from '../components/AppNavbar';
-import { PaperAirplaneIcon, ArrowLeftIcon } from '@heroicons/react/24/solid';
+import { PaperAirplaneIcon, ArrowLeftIcon, Cog6ToothIcon, TrashIcon } from '@heroicons/react/24/solid';
 
 const ChatRoom = () => {
     const { id } = useParams();
+    const navigate = useNavigate();
     const auth = useContext(AuthContext);
     const user = auth?.user;
 
@@ -18,8 +21,10 @@ const ChatRoom = () => {
     const [topContributors, setTopContributors] = useState<any[]>([]);
     const [newMessage, setNewMessage] = useState('');
     const [loading, setLoading] = useState(true);
+    const [showSettings, setShowSettings] = useState(false);
     const bottomRef = useRef<HTMLDivElement>(null);
     const isModerator = user && (user.role === 'admin' || user.role === 'moderator');
+    const isOwner = user && room && (user._id === room.creator || user.role === 'admin');
 
     const fetchMessages = async () => {
         try {
@@ -48,6 +53,30 @@ const ChatRoom = () => {
         // Auto scroll to bottom
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
+
+    const handleDeleteRoom = async () => {
+        if (!isOwner) return;
+        if (!window.confirm('Are you sure you want to delete this community room permanently?')) return;
+        try {
+            await api.delete(`/community/rooms/${id}`);
+            toast.success('Room deleted successfully');
+            navigate('/community');
+        } catch {
+            toast.error('Failed to delete room');
+        }
+    };
+
+    const handleClearChat = async () => {
+        if (!isOwner) return;
+        if (!window.confirm('Clear all messages in this room?')) return;
+        try {
+            await api.put(`/community/rooms/${id}/clear`);
+            toast.success('Chat cleared');
+            fetchMessages();
+        } catch {
+            toast.error('Failed to clear chat');
+        }
+    };
 
     const handleSend = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -133,7 +162,7 @@ const ChatRoom = () => {
                 <div className="flex-1 bg-white/80 backdrop-blur-xl border border-slate-200 rounded-3xl shadow-xl overflow-hidden flex flex-col relative z-10 animate-fade-in-up">
 
                     {/* Header */}
-                    <div className="p-4 md:p-6 border-b border-slate-200 bg-white/80 flex items-center justify-between">
+                    <div className="p-4 md:p-6 border-b border-slate-200 bg-white/80 flex items-center justify-between relative">
                         <div className="flex items-center gap-4">
                             <Link to="/community" className="p-2 -ml-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-colors">
                                 <ArrowLeftIcon className="w-5 h-5" />
@@ -148,6 +177,41 @@ const ChatRoom = () => {
                                     <p className="text-sm text-slate-600 line-clamp-1">{room.description}</p>
                                 </div>
                             </div>
+                        </div>
+
+                        {/* Settings Dropdown */}
+                        <div className="relative">
+                            <button onClick={() => setShowSettings(!showSettings)} className="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-colors">
+                                <Cog6ToothIcon className="w-6 h-6" />
+                            </button>
+                            <AnimatePresence>
+                                {showSettings && (
+                                    <>
+                                        <div className="fixed inset-0 z-40" onClick={() => setShowSettings(false)} />
+                                        <motion.div initial={{ opacity: 0, y: 10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }} className="absolute right-0 mt-2 w-56 bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 overflow-hidden py-1">
+                                            <div className="px-4 py-2 border-b border-slate-100">
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Room Settings</p>
+                                            </div>
+                                            <button className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 text-left transition-colors">
+                                                <span className="text-lg">📢</span>
+                                                <span>Room Info</span>
+                                            </button>
+                                            {isOwner && (
+                                                <>
+                                                    <button onClick={handleClearChat} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 text-left transition-colors">
+                                                        <span className="text-lg">🧹</span>
+                                                        <span>Clear Chat History</span>
+                                                    </button>
+                                                    <button onClick={handleDeleteRoom} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 text-left transition-colors">
+                                                        <TrashIcon className="w-5 h-5 text-red-500" />
+                                                        <span className="font-semibold">Delete Room</span>
+                                                    </button>
+                                                </>
+                                            )}
+                                        </motion.div>
+                                    </>
+                                )}
+                            </AnimatePresence>
                         </div>
                     </div>
 
