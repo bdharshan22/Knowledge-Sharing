@@ -264,9 +264,15 @@ const KnowledgeFeed = () => {
                 </div>
 
                 {/* ── Mobile Sidebar Toggles ── */}
-                <div style={{ display: 'none', gap: '1rem', marginBottom: '1.5rem' }} className="mobile-only-flex">
-                    <button onClick={() => setShowLeftSidebar(true)} style={{ flex: 1, padding: '0.875rem', background: card, border: `1px solid ${border}`, borderRadius: '0.75rem', fontWeight: 700, color: txt1 }}>👤 Profile</button>
-                    <button onClick={() => setShowRightSidebar(true)} style={{ flex: 1, padding: '0.875rem', background: card, border: `1px solid ${border}`, borderRadius: '0.75rem', fontWeight: 700, color: txt1 }}>📊 Stats</button>
+                <div style={{ display: 'none', gap: '1rem', marginBottom: '1.5rem', position: 'relative' }} className="mobile-only-flex">
+                    <button onClick={() => setShowLeftSidebar(true)} style={{ flex: 1, padding: '0.875rem', background: card, border: `1px solid ${border}`, borderRadius: '0.75rem', fontWeight: 700, color: txt1, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                        👤 Profile
+                        <motion.span animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 2 }} style={{ fontSize: '0.6rem', padding: '0.15rem 0.4rem', borderRadius: '0.4rem', background: '#ec4899', color: '#fff', fontWeight: 800, textTransform: 'uppercase' }}>Check it!</motion.span>
+                    </button>
+                    <button onClick={() => setShowRightSidebar(true)} style={{ flex: 1, padding: '0.875rem', background: card, border: `1px solid ${border}`, borderRadius: '0.75rem', fontWeight: 700, color: txt1, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                        📊 Stats
+                        <motion.span animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 2, delay: 0.5 }} style={{ fontSize: '0.6rem', padding: '0.15rem 0.4rem', borderRadius: '0.4rem', background: '#06b6d4', color: '#fff', fontWeight: 800, textTransform: 'uppercase' }}>Check it!</motion.span>
+                    </button>
                 </div>
 
                 {/* ── 3-col layout ── */}

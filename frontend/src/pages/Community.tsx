@@ -150,8 +150,9 @@ const Community = () => {
 
             {/* Mobile Sidebar Toggle */}
             <div style={{ display: 'none', padding: '1rem 1.5rem 0' }} className="mobile-only-flex">
-                <button onClick={() => setShowRightSidebar(true)} style={{ width: '100%', padding: '0.875rem', background: C.card, border: `1px solid ${C.border}`, borderRadius: '0.875rem', fontWeight: 700, color: C.t1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                <button onClick={() => setShowRightSidebar(true)} style={{ width: '100%', padding: '0.875rem', background: C.card, border: `1px solid ${C.border}`, borderRadius: '0.875rem', fontWeight: 700, color: C.t1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.625rem' }}>
                     📊 Community Insights & Polls
+                    <motion.span animate={{ scale: [1, 1.15, 1] }} transition={{ repeat: Infinity, duration: 2.5 }} style={{ fontSize: '0.6rem', padding: '0.15rem 0.5rem', borderRadius: '0.4rem', background: 'linear-gradient(135deg, #06b6d4, #6366f1)', color: '#fff', fontWeight: 800, textTransform: 'uppercase' }}>Check it!</motion.span>
                 </button>
             </div>
 
