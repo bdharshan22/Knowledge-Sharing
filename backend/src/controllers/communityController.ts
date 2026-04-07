@@ -37,8 +37,12 @@ export const getRoomMessages = async (req: Request, res: Response) => {
 
         const now = Date.now();
         if (room.spotlight?.expiresAt && room.spotlight.expiresAt.getTime() < now) {
-            room.spotlight = undefined as any;
-            await room.save();
+            try {
+                room.spotlight = undefined as any;
+                await room.save();
+            } catch (err) {
+                console.error('Silent background spotlight clear failed:', err);
+            }
         }
 
         // Return last 50 messages
@@ -203,7 +207,7 @@ export const setSpotlight = async (req: Request, res: Response) => {
         const room = await Room.findById(id);
         if (!room) return res.status(404).json({ message: 'Room not found' });
 
-        const message = room.messages.id(messageId as any);
+        const message = (room.messages as any).find((m: any) => m._id.toString() === messageId);
         if (!message) return res.status(404).json({ message: 'Message not found' });
 
         room.spotlight = {
@@ -215,8 +219,9 @@ export const setSpotlight = async (req: Request, res: Response) => {
 
         await room.save();
         res.json(room.spotlight);
-    } catch (error) {
-        res.status(500).json({ message: 'Server error' });
+    } catch (error: any) {
+        console.error('Set Spotlight Error:', error);
+        res.status(500).json({ message: error.message || 'Server error' });
     }
 };
 

@@ -164,7 +164,6 @@ const Profile = () => {
             <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
                 <motion.div animate={{ scale: [1, 1.2, 1], x: [0, 50, 0] }} transition={{ duration: 10, repeat: Infinity }} className="absolute -top-24 -left-24 w-[600px] h-[600px] bg-cyan-200/40 rounded-full blur-[120px]" />
                 <motion.div animate={{ scale: [1, 1.1, 1], x: [0, -40, 0] }} transition={{ duration: 12, repeat: Infinity }} className="absolute top-1/2 -right-24 w-[500px] h-[500px] bg-purple-200/40 rounded-full blur-[120px]" />
-                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] mix-blend-overlay" />
             </div>
 
             {/* Profile Header Banner */}
