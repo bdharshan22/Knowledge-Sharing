@@ -6,7 +6,7 @@ import { AuthContext } from '../context/AuthContext';
 import Navbar from '../components/AppNavbar';
 import ActivityTimeline from '../components/ActivityTimeline';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CameraIcon, MapPinIcon, PencilSquareIcon, LinkIcon, AcademicCapIcon, BoltIcon, StarIcon, UsersIcon } from '@heroicons/react/24/outline';
+import { CameraIcon, MapPinIcon, PencilSquareIcon, LinkIcon, AcademicCapIcon, BoltIcon, StarIcon, UsersIcon, ShieldCheckIcon, UserIcon } from '@heroicons/react/24/outline';
 
 type ProfileUser = {
     _id: string;
@@ -211,21 +211,28 @@ const Profile = () => {
                             </div>
 
                             <div className="flex flex-col items-center mb-6">
-                                <h1 className="text-3xl font-black text-slate-900 leading-tight mb-2 font-display tracking-tight flex items-center justify-center gap-3">
+                                <h1 className="text-3xl font-black text-slate-900 leading-tight mb-2 font-display tracking-tight flex flex-wrap items-center justify-center gap-3">
                                     {user?.name}
+                                    <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
                                     {user?.role === 'admin' ? (
-                                        <span className="bg-gradient-to-r from-indigo-700 to-purple-800 text-white text-[10px] uppercase font-black px-3 py-1 rounded-full shadow-lg shadow-purple-500/30 border border-purple-400/30">
-                                            Admin
+                                        <span className="flex items-center gap-1.5 bg-gradient-to-br from-indigo-600 via-violet-700 to-fuchsia-800 text-white text-[9px] uppercase font-black px-3 py-1 rounded-[10px] shadow-[0_0_20px_-3px_rgba(99,102,241,0.6)] border border-white/20 relative group overflow-hidden">
+                                            <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            <ShieldCheckIcon className="w-3 h-3 text-indigo-100 drop-shadow-sm" />
+                                            <span className="tracking-tighter">Authority Admin</span>
+                                            <div className="absolute -inset-1 bg-indigo-500/20 blur-xl rounded-full animate-pulse -z-10" />
                                         </span>
                                     ) : user?.role === 'moderator' ? (
-                                        <span className="bg-gradient-to-r from-cyan-600 to-indigo-600 text-white text-[10px] uppercase font-black px-3 py-1 rounded-full shadow-lg shadow-cyan-500/30 border border-cyan-400/30">
-                                            Moderator
+                                        <span className="flex items-center gap-1.5 bg-gradient-to-br from-cyan-500 to-indigo-600 text-white text-[9px] uppercase font-black px-3 py-1 rounded-[10px] shadow-[0_0_20px_-3px_rgba(6,182,212,0.5)] border border-cyan-400/20 relative overflow-hidden">
+                                            <BoltIcon className="w-3 h-3 text-cyan-50" />
+                                            <span className="tracking-tighter">Staff Moderator</span>
                                         </span>
                                     ) : (
-                                        <span className="bg-slate-100 text-slate-500 text-[10px] uppercase font-black px-3 py-1 rounded-full border border-slate-200">
-                                            Member
+                                        <span className="flex items-center gap-1 bg-white/80 backdrop-blur-md text-slate-500 text-[9px] uppercase font-black px-3 py-1 rounded-[10px] border border-slate-200/60 shadow-sm hover:shadow-md transition-all">
+                                            <UserIcon className="w-3 h-3 text-slate-400" />
+                                            <span className="tracking-tighter">Verified Member</span>
                                         </span>
                                     )}
+                                    </motion.div>
                                 </h1>
                                 <p className="text-indigo-600 font-bold uppercase tracking-widest text-[10px] mb-2">@{user?.username || 'user'}</p>
                             </div>
