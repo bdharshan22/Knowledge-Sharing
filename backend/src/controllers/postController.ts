@@ -130,7 +130,7 @@ export const getPosts = async (req: Request, res: Response) => {
 
         const posts = await Post.find(query)
             .select('-content -editHistory -analytics -flags') // Exclude heavy fields
-            .populate('author', 'name email avatar')
+            .populate('author', 'name email avatar username')
             .sort(sortOption)
             .skip(skip)
             .limit(limit);
@@ -167,9 +167,9 @@ export const getPostById = async (req: Request, res: Response) => {
         await post.save();
 
         const populatedPost = await Post.findById(req.params.id)
-            .populate('author', 'name email avatar')
-            .populate('comments.user', 'name email avatar')
-            .populate('editHistory.editedBy', 'name avatar');
+            .populate('author', 'name email avatar username')
+            .populate('comments.user', 'name email avatar username')
+            .populate('editHistory.editedBy', 'name avatar username');
 
         res.json(populatedPost);
     } catch (error: any) {
@@ -306,9 +306,9 @@ export const updatePost = async (req: Request, res: Response) => {
         await post.save();
 
         const updatedPost = await Post.findById(req.params.id)
-            .populate('author', 'name email avatar')
-            .populate('comments.user', 'name email avatar')
-            .populate('editHistory.editedBy', 'name avatar');
+            .populate('author', 'name email avatar username')
+            .populate('comments.user', 'name email avatar username')
+            .populate('editHistory.editedBy', 'name avatar username');
 
         res.json(updatedPost);
     } catch (error) {
@@ -498,7 +498,7 @@ export const addComment = async (req: Request, res: Response) => {
         await post.save();
 
         // Populate user for the new comment to return it
-        const updatedPost = await Post.findById(req.params.id).populate('comments.user', 'name email');
+        const updatedPost = await Post.findById(req.params.id).populate('comments.user', 'name email avatar username');
         res.json(updatedPost?.comments);
     } catch (error) {
         res.status(500).json({ message: 'Server error' });
@@ -546,7 +546,7 @@ export const addAnswer = async (req: Request, res: Response) => {
         post.answers.push(answer as any);
         await post.save();
 
-        const updatedPost = await Post.findById(req.params.id).populate('answers.author', 'name email avatar');
+        const updatedPost = await Post.findById(req.params.id).populate('answers.author', 'name email avatar username');
         res.json(updatedPost?.answers);
     } catch (error) {
         res.status(500).json({ message: 'Server error' });
@@ -674,7 +674,7 @@ export const getFeed = async (req: Request, res: Response) => {
             ...statusFilter
         })
             .select('title excerpt author createdAt likes comments bookmarks views type tags category difficulty visibility status')
-            .populate('author', 'name avatar')
+            .populate('author', 'name avatar username')
             .sort({ createdAt: -1 })
             .limit(500);
 
