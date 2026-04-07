@@ -63,7 +63,7 @@ const Login = () => {
           >
             <img 
                 src={favicon} 
-                alt="KnowledgeShare" 
+                alt="Knowledge Share" 
                 style={{ 
                     width: 80, height: 80, borderRadius: '24px', margin: '0 auto 1.5rem',
                     boxShadow: '0 0 40px rgba(6,182,212,0.4), 0 0 80px rgba(99,102,241,0.2)',
@@ -75,7 +75,7 @@ const Login = () => {
               background: 'linear-gradient(135deg, #67e8f9, #a5b4fc, #f9a8d4)',
               WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
               fontFamily: '"Space Grotesk", sans-serif', marginBottom: '0.75rem'
-            }}>KnowledgeShare</h2>
+            }}>Knowledge Share</h2>
             <p style={{ color: '#475569', fontSize: '1rem', lineHeight: 1.6, maxWidth: 300 }}>
               The collaborative platform where teams share knowledge and scale their culture.
             </p>
@@ -129,7 +129,7 @@ const Login = () => {
             <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none', marginBottom: '2rem' }}>
               <img 
                 src={favicon} 
-                alt="KnowledgeShare" 
+                alt="Knowledge Share" 
                 style={{ 
                     width: 42, height: 42, borderRadius: '12px',
                     boxShadow: '0 0 20px rgba(6,182,212,0.4)'
@@ -140,7 +140,7 @@ const Login = () => {
                 background: 'linear-gradient(135deg, #e2e8f0, #94a3b8)',
                 WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
                 fontFamily: '"Space Grotesk", sans-serif'
-              }}>KnowledgeShare</span>
+              }}>Knowledge Share</span>
             </Link>
             <h1 style={{ fontSize: '1.875rem', fontWeight: 800, color: '#f1f5f9', letterSpacing: '-0.02em', marginBottom: '0.5rem', fontFamily: '"Space Grotesk", sans-serif' }}>
               Welcome back
@@ -285,7 +285,7 @@ const Login = () => {
           </div>
 
           <p style={{ textAlign: 'center', color: '#1e293b', fontSize: '0.75rem', marginTop: '1.5rem' }}>
-            © {new Date().getFullYear()} KnowledgeShare. All rights reserved.
+            © {new Date().getFullYear()} Knowledge Share. All rights reserved.
           </p>
         </motion.div>
       </div>

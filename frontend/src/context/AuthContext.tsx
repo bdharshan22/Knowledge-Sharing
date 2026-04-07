@@ -60,41 +60,49 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setLoading(false);
   }, []);
 
-  // ── Auto Logout Logic (2 minutes) ─────────────────────────────────────────────
+  // ── Auto Logout Logic (Throttled Timer) ───────────────────────────────────
   useEffect(() => {
     if (!user) {
       setSecondsRemaining(null);
       return;
     }
 
+    const LIMIT = 120; // 2 minutes
+    let lastActivity = Date.now();
     let logoutTimer: any;
     let countdownInterval: any;
-    const LIMIT = 120; // 2 minutes in seconds
 
-    const resetTimer = () => {
-      if (logoutTimer) clearTimeout(logoutTimer);
-      if (countdownInterval) clearInterval(countdownInterval);
-
+    const resetActivity = () => {
+      // Throttle reset to avoid excessive state updates/timers
+      if (Date.now() - lastActivity < 1000) return;
+      lastActivity = Date.now();
+      
       setSecondsRemaining(LIMIT);
-
+      
+      if (logoutTimer) clearTimeout(logoutTimer);
       logoutTimer = setTimeout(() => {
         logout();
       }, LIMIT * 1000);
-
-      countdownInterval = setInterval(() => {
-        setSecondsRemaining(prev => (prev && prev > 0) ? prev - 1 : 0);
-      }, 1000);
     };
 
-    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
-    events.forEach(event => window.addEventListener(event, resetTimer));
+    const countdown = () => {
+      const elapsed = Math.floor((Date.now() - lastActivity) / 1000);
+      const remaining = Math.max(0, LIMIT - elapsed);
+      setSecondsRemaining(remaining);
+      if (remaining === 0) logout();
+    };
 
-    resetTimer();
+    countdownInterval = setInterval(countdown, 1000);
+    logoutTimer = setTimeout(() => logout(), LIMIT * 1000);
+    setSecondsRemaining(LIMIT);
+
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+    events.forEach(e => window.addEventListener(e, resetActivity));
 
     return () => {
       if (logoutTimer) clearTimeout(logoutTimer);
       if (countdownInterval) clearInterval(countdownInterval);
-      events.forEach(event => window.removeEventListener(event, resetTimer));
+      events.forEach(e => window.removeEventListener(e, resetActivity));
     };
   }, [user]);
 

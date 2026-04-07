@@ -82,7 +82,7 @@ const Register = () => {
             <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none', marginBottom: '1.75rem' }}>
               <img 
                 src={favicon} 
-                alt="KnowledgeShare" 
+                alt="Knowledge Share" 
                 style={{ 
                     width: 42, height: 42, borderRadius: '12px',
                     boxShadow: '0 0 20px rgba(6,182,212,0.4)'
@@ -93,7 +93,7 @@ const Register = () => {
                 background: 'linear-gradient(135deg, #e2e8f0, #94a3b8)',
                 WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
                 fontFamily: '"Space Grotesk", sans-serif'
-              }}>KnowledgeShare</span>
+              }}>Knowledge Share</span>
             </Link>
             <h1 style={{
               fontSize: '1.875rem', fontWeight: 800, color: '#f1f5f9',
@@ -289,7 +289,7 @@ const Register = () => {
           </div>
 
           <p style={{ textAlign: 'center', color: '#1e293b', fontSize: '0.75rem', marginTop: '1.5rem' }}>
-            © {new Date().getFullYear()} KnowledgeShare. All rights reserved.
+            © {new Date().getFullYear()} Knowledge Share. All rights reserved.
           </p>
         </motion.div>
       </div>

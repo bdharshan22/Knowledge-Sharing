@@ -448,7 +448,7 @@ function Home() {
               </Link>
             ))}
           </div>
-          <p>© {new Date().getFullYear()} Knowledge Share Portal — Engineered for teams that win.</p>
+          <p>© {new Date().getFullYear()} Knowledge Share — Engineered for teams that win.</p>
         </div>
       </footer>
     </div>
