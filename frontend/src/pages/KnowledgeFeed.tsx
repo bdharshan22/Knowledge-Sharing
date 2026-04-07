@@ -115,6 +115,12 @@ const KnowledgeFeed = () => {
         } catch { /* ignore */ }
     };
 
+    const allTags = useMemo(() => {
+        const s = new Set<string>();
+        posts.forEach(p => p.tags?.forEach(t => s.add(t)));
+        return Array.from(s);
+    }, [posts]);
+
     const filteredPosts = useMemo(() => {
         let r = [...posts];
         if (filter !== 'all') r = r.filter(p => p.type === filter);
@@ -201,10 +207,60 @@ const KnowledgeFeed = () => {
                     </div>
 
                     {/* Search bar */}
-                    <form onSubmit={handleSearch} style={{ display: 'flex', gap: '0.75rem', padding: '0.75rem 1rem', borderRadius: '1rem', background: card, border: `1px solid ${border}`, marginBottom: '1.5rem' }}>
+                    <form onSubmit={handleSearch} style={{ display: 'flex', gap: '0.75rem', padding: '0.75rem 1rem', borderRadius: '1rem', background: card, border: `1px solid ${border}`, marginBottom: '1rem' }}>
                         <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search knowledge..." style={{ flex: 1, border: 'none', outline: 'none', fontSize: '0.95rem', background: 'transparent' }} />
                         <button type="submit" style={{ padding: '0.5rem 1.25rem', borderRadius: '0.625rem', background: accent, color: '#fff', fontWeight: 700, border: 'none' }}>Search</button>
                     </form>
+
+                    {/* Filters UI */}
+                    <div style={{ background: card, border: `1px solid ${border}`, borderRadius: '1rem', overflow: 'hidden' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1.25rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <span style={{ fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: accent }}>Feed Filters</span>
+                                {activeFilterCount > 0 && (
+                                    <span style={{ padding: '0.15rem 0.625rem', background: accent, color: '#fff', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 800 }}>{activeFilterCount}</span>
+                                )}
+                            </div>
+                            <div style={{ display: 'flex', gap: '1rem' }}>
+                                {activeFilterCount > 0 && <button onClick={clearAll} style={{ background: 'none', border: 'none', color: '#ef4444', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}>Reset</button>}
+                                <button onClick={() => setShowFilters(!showFilters)} style={{ background: 'none', border: 'none', color: txt2, cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem' }}>
+                                    {showFilters ? 'Hide' : 'Show'} Filters
+                                </button>
+                            </div>
+                        </div>
+                        <AnimatePresence>
+                            {showFilters && (
+                                <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} style={{ overflow: 'hidden', borderTop: `1px solid ${border}`, padding: '1rem 1.25rem' }}>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem' }}>
+                                        <div>
+                                            <p style={{ fontSize: '0.7rem', fontWeight: 800, color: txt3, textTransform: 'uppercase', marginBottom: '0.5rem' }}>Type</p>
+                                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                                {['article', 'question', 'resource', 'tutorial'].map(t => (
+                                                    <button key={t} onClick={() => toggleFilter(selectedTypes, setSelectedTypes, t)} style={{
+                                                        padding: '0.35rem 0.875rem', borderRadius: '0.5rem', border: `1px solid ${selectedTypes.includes(t) ? accent : border}`,
+                                                        background: selectedTypes.includes(t) ? '#eff6ff' : 'transparent', color: selectedTypes.includes(t) ? accent : txt2,
+                                                        fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer'
+                                                    }}>{t}</button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <p style={{ fontSize: '0.7rem', fontWeight: 800, color: txt3, textTransform: 'uppercase', marginBottom: '0.5rem' }}>Sort</p>
+                                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                {['newest', 'popular'].map(s => (
+                                                    <button key={s} onClick={() => setSortBy(s)} style={{
+                                                        padding: '0.35rem 0.875rem', borderRadius: '0.5rem', border: `1px solid ${sortBy === s ? accent : border}`,
+                                                        background: sortBy === s ? accent : 'transparent', color: sortBy === s ? '#fff' : txt2,
+                                                        fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer'
+                                                    }}>{s}</button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
                 </div>
 
                 {/* ── Mobile Sidebar Toggles ── */}
@@ -219,7 +275,7 @@ const KnowledgeFeed = () => {
                     {/* Left Sidebar */}
                     <AnimatePresence>
                         {(showLeftSidebar || window.innerWidth >= 1101) && (
-                            <motion.div initial="hidden" animate="visible" exit="hidden" variants={sidebarVariants} className="left-sidebar-container" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <motion.div initial="hidden" animate="visible" exit="hidden" variants={sidebarVariants} transition={{ type: 'spring', damping: 25 }} className="left-sidebar-container" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                 <button className="mobile-only-flex" onClick={() => setShowLeftSidebar(false)} style={{ width: '100%', padding: '0.625rem', background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '0.5rem', fontWeight: 700, marginBottom: '0.5rem', display: 'none' }}>Close</button>
                                 <div style={{ background: card, border: `1px solid ${border}`, borderRadius: '1rem', overflow: 'hidden' }}>
                                     <div style={{ height: 48, background: 'linear-gradient(135deg, #6366f1, #06b6d4)' }} />
@@ -229,10 +285,30 @@ const KnowledgeFeed = () => {
                                         <div style={{ fontWeight: 800, color: txt1, fontSize: '0.95rem', marginTop: '0.5rem' }}>{user?.name || 'Guest'}</div>
                                         <p style={{ fontSize: '0.75rem', color: txt3 }}>Knowledge Sharer</p>
                                         <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                                            {['My Feed', 'Bookmarks', 'Collections'].map(l => (
-                                                <button key={l} style={{ textAlign: 'left', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', border: 'none', background: l === 'My Feed' ? '#eff6ff' : 'transparent', color: l === 'My Feed' ? accent : txt2, fontWeight: 600, fontSize: '0.85rem' }}>{l}</button>
+                                            {[
+                                                { label: 'My Feed', to: '/dashboard', icon: '🏠' },
+                                                { label: 'Bookmarks', to: '/bookmarks', icon: '🔖' },
+                                                { label: 'Collections', to: '/collections', icon: '📚' }
+                                            ].map(l => (
+                                                <Link key={l.label} to={l.to} style={{
+                                                    textAlign: 'left', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', textDecoration: 'none',
+                                                    background: l.label === 'My Feed' ? '#eff6ff' : 'transparent', color: l.label === 'My Feed' ? accent : txt2,
+                                                    fontWeight: 600, fontSize: '0.85rem'
+                                                }}><span>{l.icon}</span> {l.label}</Link>
                                             ))}
                                         </div>
+                                    </div>
+                                </div>
+                                <div style={{ background: card, border: `1px solid ${border}`, borderRadius: '1rem', padding: '1.25rem' }}>
+                                    <p style={{ fontSize: '0.7rem', fontWeight: 800, color: accent, textTransform: 'uppercase', marginBottom: '0.75rem' }}>Pick Tags</p>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                                        {allTags.slice(0, 10).map(t => (
+                                            <button key={t} onClick={() => toggleFilter(selectedTags, setSelectedTags, t)} style={{
+                                                padding: '0.25rem 0.625rem', borderRadius: '0.4rem', border: `1px solid ${selectedTags.includes(t) ? accent : border}`,
+                                                background: selectedTags.includes(t) ? '#eff6ff' : '#f8fafc', color: selectedTags.includes(t) ? accent : txt3,
+                                                fontSize: '0.7rem', fontWeight: 600, cursor: 'pointer'
+                                            }}>#{t}</button>
+                                        ))}
                                     </div>
                                 </div>
                             </motion.div>
@@ -241,25 +317,57 @@ const KnowledgeFeed = () => {
 
                     {/* Main Feed */}
                     <div style={{ minWidth: 0 }}>
-                        {loading ? <p>Loading feed...</p> : (
+                        {loading ? <div style={{ textAlign: 'center', padding: '2rem' }}>Loading posts...</div> : (
                             <motion.div layout style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                 {filteredPosts.map((post, i) => {
                                     const typeStyle = TYPE_STYLES[post.type] || TYPE_STYLES.article;
+                                    const isLiked = user ? post.likes?.includes(user._id) : false;
+                                    const isSaved = user ? post.bookmarks?.includes(user._id) : false;
+                                    const isAuthor = user && post.author?._id === user._id;
+
                                     return (
-                                        <motion.div key={post._id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}
+                                        <motion.div key={post._id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.05 }}
                                             style={{ background: card, border: `1px solid ${border}`, borderRadius: '1.25rem', padding: '1.5rem', position: 'relative', overflow: 'hidden' }}>
                                             <div style={{ position: 'absolute', top: 0, left: 0, width: 4, height: '100%', background: typeStyle.dot }} />
                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                                     <img src={post.author?.avatar || 'https://ui-avatars.com/api/?name=U'} style={{ width: 36, height: 36, borderRadius: '50%' }} alt="Author" />
-                                                    <div style={{ fontSize: '0.85rem', fontWeight: 700, color: txt1 }}>{post.author?.name}</div>
+                                                    <div>
+                                                        <div style={{ fontSize: '0.85rem', fontWeight: 700, color: txt1 }}>{post.author?.name}</div>
+                                                        <div style={{ fontSize: '0.7rem', color: txt3 }}>{new Date(post.createdAt).toLocaleDateString()}</div>
+                                                    </div>
                                                 </div>
-                                                <span style={{ fontSize: '0.65rem', fontWeight: 800, padding: '0.25rem 0.625rem', borderRadius: '1rem', background: typeStyle.bg, color: typeStyle.text, textTransform: 'uppercase' }}>{post.type}</span>
+                                                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                                    <span style={{ fontSize: '0.65rem', fontWeight: 800, padding: '0.25rem 0.625rem', borderRadius: '1rem', background: typeStyle.bg, color: typeStyle.text, textTransform: 'uppercase' }}>{post.type}</span>
+                                                    {!isAuthor && (
+                                                        <button onClick={() => handleFollow(post.author._id)} style={{ padding: '0.2rem 0.5rem', border: '1px solid #e2e8f0', borderRadius: '0.5rem', fontSize: '0.65rem', fontWeight: 700, cursor: 'pointer', color: post.isFollowingAuthor ? accent : txt3 }}>
+                                                            {post.isFollowingAuthor ? 'Following' : '+ Follow'}
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </div>
                                             <Link to={`/posts/${post._id}`} style={{ textDecoration: 'none' }}>
                                                 <h2 style={{ fontSize: '1.15rem', fontWeight: 800, color: txt1, marginBottom: '0.5rem' }}>{post.title}</h2>
-                                                <p style={{ color: txt2, fontSize: '0.9rem', lineHeight: 1.5 }}>{post.excerpt || post.content?.slice(0, 150)}...</p>
+                                                <p style={{ color: txt2, fontSize: '0.9rem', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                                                    {post.excerpt || post.content?.slice(0, 150)}...
+                                                </p>
                                             </Link>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '1.25rem', paddingTop: '1rem', borderTop: `1px solid ${border}` }}>
+                                                <div style={{ display: 'flex', gap: '1rem' }}>
+                                                    <button onClick={() => handleLike(post._id)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', color: isLiked ? '#ef4444' : txt3, fontWeight: 600, fontSize: '0.8rem' }}>
+                                                        <span>❤️</span> {post.likes?.length || 0}
+                                                    </button>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: txt3, fontWeight: 600, fontSize: '0.8rem' }}>
+                                                        <span>💬</span> {post.comments?.length || 0}
+                                                    </div>
+                                                </div>
+                                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                    <button onClick={() => handleSave(post._id)} style={{ background: 'none', border: `1px solid ${isSaved ? accent : border}`, borderRadius: '0.5rem', padding: '0.25rem 0.625rem', cursor: 'pointer', color: isSaved ? accent : txt3, fontSize: '0.75rem', fontWeight: 600 }}>
+                                                        {isSaved ? 'Saved' : 'Save'}
+                                                    </button>
+                                                    {isAuthor && <button onClick={() => handleDelete(post._id)} style={{ background: 'none', border: '1px solid #fee2e2', borderRadius: '0.5rem', padding: '0.25rem 0.625rem', cursor: 'pointer', color: '#ef4444', fontSize: '0.75rem', fontWeight: 600 }}>Delete</button>}
+                                                </div>
+                                            </div>
                                         </motion.div>
                                     );
                                 })}
@@ -270,16 +378,21 @@ const KnowledgeFeed = () => {
                     {/* Right Sidebar */}
                     <AnimatePresence>
                         {(showRightSidebar || window.innerWidth >= 1101) && (
-                            <motion.div initial="hiddenRight" animate="visible" exit="hiddenRight" variants={sidebarVariants} className="right-sidebar-container" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <motion.div initial="hiddenRight" animate="visible" exit="hiddenRight" variants={sidebarVariants} transition={{ type: 'spring', damping: 25 }} className="right-sidebar-container" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                 <button className="mobile-only-flex" onClick={() => setShowRightSidebar(false)} style={{ width: '100%', padding: '0.625rem', background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '0.5rem', fontWeight: 700, marginBottom: '0.5rem', display: 'none' }}>Close</button>
                                 <div style={{ borderRadius: '1.25rem', padding: '1.5rem', background: 'linear-gradient(135deg, #6366f1, #06b6d4)', color: '#fff' }}>
-                                    <h3 style={{ fontWeight: 800, fontSize: '1rem', marginBottom: '0.5rem' }}>Goal Check 🎯</h3>
-                                    <p style={{ fontSize: '0.8rem', opacity: 0.9 }}>3 more posts to reach your weekly streak!</p>
+                                    <h3 style={{ fontWeight: 800, fontSize: '1rem', marginBottom: '0.5rem' }}>Weekly Goal 🎯</h3>
+                                    <p style={{ fontSize: '0.8rem', opacity: 0.9 }}>Contribute 3 posts to master your domain.</p>
+                                    <div style={{ height: 6, background: 'rgba(0,0,0,0.2)', borderRadius: 10, marginTop: '1rem' }}>
+                                        <div style={{ width: '33%', height: '100%', background: '#fff', borderRadius: 10 }} />
+                                    </div>
                                 </div>
                                 <div style={{ background: card, border: `1px solid ${border}`, borderRadius: '1.25rem', padding: '1.25rem' }}>
-                                    <p style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', color: accent, marginBottom: '0.75rem' }}>Trending Topics</p>
-                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
-                                        {['React', 'UI', 'Dev', 'AI'].map(t => <span key={t} style={{ fontSize: '0.75rem', fontWeight: 600, color: txt2 }}>#{t}</span>)}
+                                    <p style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', color: accent, marginBottom: '0.75rem' }}>Trending Now</p>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                        {['System Design', 'React Performance', 'AI Ethics', 'Rust Lang'].map(t => (
+                                            <div key={t} style={{ fontSize: '0.85rem', fontWeight: 600, color: txt2, cursor: 'pointer' }}>#{t}</div>
+                                        ))}
                                     </div>
                                 </div>
                             </motion.div>
