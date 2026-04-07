@@ -28,10 +28,6 @@ const ChatRoom = () => {
     const roomCreatorId = typeof room?.creator === 'object' ? room.creator?._id : room?.creator;
     const isOwner = user && room && (user?._id === roomCreatorId || user?.role === 'admin');
     
-    useEffect(() => {
-        if (room) console.log('Chat Permissions:', { userId: user?._id, roomCreator: roomCreatorId, isOwner, isAdmin: user?.role === 'admin' });
-    }, [room, user]);
-
     const fetchMessages = async () => {
         try {
             const res = await api.get(`/community/rooms/${id}`);

@@ -25,6 +25,7 @@ const roomSchema = new mongoose.Schema({
     },
 
     members: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    creator: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
 
     isArchived: { type: Boolean, default: false }
 }, { timestamps: true });

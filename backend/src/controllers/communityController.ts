@@ -110,12 +110,56 @@ export const postMessage = async (req: Request, res: Response) => {
 export const createRoom = async (req: Request, res: Response) => {
     try {
         const { name, description, icon, topics } = req.body;
+        const creator = (req as any).user.id;
         // Check if room exists
         const existing = await Room.findOne({ name });
         if (existing) return res.status(400).json({ message: 'Room already exists' });
 
-        const room = await Room.create({ name, description, icon, topics });
+        const room = await Room.create({ name, description, icon, topics, creator });
         res.status(201).json(room);
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+export const deleteRoom = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const userId = (req as any).user.id;
+        const user = await User.findById(userId).select('role');
+        const room = await Room.findById(id);
+
+        if (!room) return res.status(404).json({ message: 'Room not found' });
+
+        // Check permission: creator or admin
+        const isOwner = room.creator?.toString() === userId || user?.role === 'admin';
+        if (!isOwner) return res.status(403).json({ message: 'Not authorized to delete this room' });
+
+        await Room.findByIdAndDelete(id);
+        res.json({ message: 'Room removed' });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+export const clearRoomMessages = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const userId = (req as any).user.id;
+        const user = await User.findById(userId).select('role');
+        const room = await Room.findById(id);
+
+        if (!room) return res.status(404).json({ message: 'Room not found' });
+
+        // Check permission: creator or admin
+        const isOwner = room.creator?.toString() === userId || user?.role === 'admin';
+        if (!isOwner) return res.status(403).json({ message: 'Not authorized to clear this room history' });
+
+        (room.messages as any) = [];
+        (room.pinnedMessages as any) = [];
+        room.spotlight = undefined as any;
+        await room.save();
+        res.json({ message: 'Chat cleared' });
     } catch (error) {
         res.status(500).json({ message: 'Server error' });
     }

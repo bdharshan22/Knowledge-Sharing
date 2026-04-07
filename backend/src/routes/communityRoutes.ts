@@ -1,6 +1,7 @@
 import express from 'express';
 import {
     getRooms, getRoomMessages, postMessage, createRoom, togglePinMessage, setSpotlight, clearSpotlight,
+    deleteRoom, clearRoomMessages,
     getPolls, createPoll, votePoll
 } from '../controllers/communityController';
 import { protect } from '../middleware/authMiddleware';
@@ -10,7 +11,9 @@ const router = express.Router();
 // Rooms
 router.get('/rooms', getRooms);
 router.get('/rooms/:id', protect, getRoomMessages);
-router.post('/rooms', protect, createRoom); // Admin or privileged users usually, but open for now
+router.post('/rooms', protect, createRoom);
+router.delete('/rooms/:id', protect, deleteRoom);
+router.put('/rooms/:id/clear', protect, clearRoomMessages);
 router.post('/rooms/:id/messages', protect, postMessage);
 router.put('/rooms/:id/pin/:messageId', protect, togglePinMessage);
 router.post('/rooms/:id/spotlight', protect, setSpotlight);
