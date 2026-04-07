@@ -248,8 +248,6 @@ const Community = () => {
                         <>
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowRightSidebar(false)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(4px)', zIndex: 999 }} />
                             <motion.div initial="hidden" animate="visible" exit="hidden" variants={sidebarVariants} transition={{ type: 'spring', damping: 25 }} className="right-sidebar-container" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', zIndex: 1000 }}>
-                                <button className="mobile-only-flex" onClick={() => setShowRightSidebar(false)} style={{ width: '100%', padding: '0.875rem', background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '0.5rem', fontWeight: 700, marginBottom: '0.5rem', display: 'none' }}>Close Insights</button>
-                                
                                 {/* Polls panel */}
                                 <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: '1rem', overflow: 'hidden' }}>
                                     <div style={{ padding: '1rem 1.25rem', borderBottom: `1px solid ${C.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(135deg, #faf5ff, #eff6ff)' }}>

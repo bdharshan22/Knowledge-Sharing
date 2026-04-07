@@ -296,7 +296,6 @@ const KnowledgeFeed = () => {
                             <>
                                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowLeftSidebar(false)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(4px)', zIndex: 999 }} />
                                 <motion.div initial="hidden" animate="visible" exit="hidden" variants={sidebarVariants} transition={{ type: 'spring', damping: 25 }} className="left-sidebar-container" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', zIndex: 1000 }}>
-                                    <button className="mobile-only-flex" onClick={() => setShowLeftSidebar(false)} style={{ width: '100%', padding: '0.625rem', background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '0.5rem', fontWeight: 700, marginBottom: '0.5rem', display: 'none' }}>Close</button>
                                     <div style={{ background: card, border: `1px solid ${border}`, borderRadius: '1rem', overflow: 'hidden' }}>
                                         <div style={{ height: 48, background: 'linear-gradient(135deg, #6366f1, #06b6d4)' }} />
                                         <div style={{ padding: '0 1rem 1rem' }}>
@@ -440,7 +439,6 @@ const KnowledgeFeed = () => {
                             <>
                                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowRightSidebar(false)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(4px)', zIndex: 999 }} />
                                 <motion.div initial="hiddenRight" animate="visible" exit="hiddenRight" variants={sidebarVariants} transition={{ type: 'spring', damping: 25 }} className="right-sidebar-container" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', zIndex: 1000 }}>
-                                    <button className="mobile-only-flex" onClick={() => setShowRightSidebar(false)} style={{ width: '100%', padding: '0.625rem', background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '0.5rem', fontWeight: 700, marginBottom: '0.5rem', display: 'none' }}>Close</button>
                                     <div style={{ borderRadius: '1.25rem', padding: '1.5rem', background: 'linear-gradient(135deg, #6366f1, #06b6d4)', color: '#fff' }}>
                                         <h3 style={{ fontWeight: 800, fontSize: '1rem', marginBottom: '0.5rem' }}>Weekly Goal 🎯</h3>
                                         <p style={{ fontSize: '0.8rem', opacity: 0.9 }}>Contribute 3 posts to master your domain.</p>

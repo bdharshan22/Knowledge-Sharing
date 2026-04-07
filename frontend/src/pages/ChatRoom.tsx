@@ -24,7 +24,13 @@ const ChatRoom = () => {
     const [showSettings, setShowSettings] = useState(false);
     const bottomRef = useRef<HTMLDivElement>(null);
     const isModerator = user && (user.role === 'admin' || user.role === 'moderator');
-    const isOwner = user && room && (user._id === room.creator || user.role === 'admin');
+    // More robust owner check — supports both ID strings and populated objects
+    const roomCreatorId = typeof room?.creator === 'object' ? room.creator?._id : room?.creator;
+    const isOwner = user && room && (user?._id === roomCreatorId || user?.role === 'admin');
+    
+    useEffect(() => {
+        if (room) console.log('Chat Permissions:', { userId: user?._id, roomCreator: roomCreatorId, isOwner, isAdmin: user?.role === 'admin' });
+    }, [room, user]);
 
     const fetchMessages = async () => {
         try {
@@ -56,7 +62,7 @@ const ChatRoom = () => {
 
     const handleDeleteRoom = async () => {
         if (!isOwner) return;
-        if (!window.confirm('Are you sure you want to delete this community room permanently?')) return;
+        if (!window.confirm('Are you sure you want to delete this community room permanently? This action cannot be undone.')) return;
         try {
             await api.delete(`/community/rooms/${id}`);
             toast.success('Room deleted successfully');
@@ -181,33 +187,40 @@ const ChatRoom = () => {
 
                         {/* Settings Dropdown */}
                         <div className="relative">
-                            <button onClick={() => setShowSettings(!showSettings)} className="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-colors">
+                            <button onClick={() => setShowSettings(!showSettings)} className="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-all active:rotate-90">
                                 <Cog6ToothIcon className="w-6 h-6" />
                             </button>
                             <AnimatePresence>
                                 {showSettings && (
                                     <>
                                         <div className="fixed inset-0 z-40" onClick={() => setShowSettings(false)} />
-                                        <motion.div initial={{ opacity: 0, y: 10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }} className="absolute right-0 mt-2 w-56 bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 overflow-hidden py-1">
-                                            <div className="px-4 py-2 border-b border-slate-100">
-                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Room Settings</p>
+                                        <motion.div initial={{ opacity: 0, y: 10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }} className="absolute right-0 mt-2 w-64 bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 overflow-hidden py-2">
+                                            <div className="px-4 py-2 border-b border-slate-100 mb-1">
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Admin Control Panel</p>
                                             </div>
-                                            <button className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 text-left transition-colors">
-                                                <span className="text-lg">📢</span>
-                                                <span>Room Info</span>
-                                            </button>
-                                            {isOwner && (
-                                                <>
-                                                    <button onClick={handleClearChat} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 text-left transition-colors">
-                                                        <span className="text-lg">🧹</span>
-                                                        <span>Clear Chat History</span>
-                                                    </button>
-                                                    <button onClick={handleDeleteRoom} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 text-left transition-colors">
-                                                        <TrashIcon className="w-5 h-5 text-red-500" />
-                                                        <span className="font-semibold">Delete Room</span>
-                                                    </button>
-                                                </>
-                                            )}
+                                            
+                                            <div className="px-1 space-y-1">
+                                                <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-cyan-600 rounded-xl text-left transition-colors font-medium">
+                                                    <span className="text-lg">📢</span>
+                                                    <span>View Room Metadata</span>
+                                                </button>
+
+                                                {isOwner ? (
+                                                    <>
+                                                        <div className="h-px bg-slate-100 mx-3 my-1" />
+                                                        <button onClick={handleClearChat} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-amber-600 rounded-xl text-left transition-colors font-medium">
+                                                            <span className="text-lg">🧹</span>
+                                                            <span>Clear Chat Logs</span>
+                                                        </button>
+                                                        <button onClick={handleDeleteRoom} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 rounded-xl text-left transition-colors group">
+                                                            <TrashIcon className="w-5 h-5 text-red-500 group-hover:scale-110 transition-transform" />
+                                                            <span className="font-bold underline decoration-red-200 decoration-2 underline-offset-4">Terminate Room</span>
+                                                        </button>
+                                                    </>
+                                                ) : (
+                                                    <p className="px-4 py-2 text-[10px] text-slate-400 italic">Limited access: Only creator can delete.</p>
+                                                )}
+                                            </div>
                                         </motion.div>
                                     </>
                                 )}
