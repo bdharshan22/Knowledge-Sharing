@@ -2,6 +2,7 @@ import { useState, useContext } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import favicon from '../assets/favicon.png';
 import { AuthContext } from '../context/AuthContext';
 import api from '../services/api';
 
@@ -60,14 +61,15 @@ const Login = () => {
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             style={{ textAlign: 'center', marginBottom: '3rem' }}
           >
-            <div style={{
-              width: 80, height: 80, borderRadius: '24px', margin: '0 auto 1.5rem',
-              background: 'linear-gradient(135deg, #06b6d4, #6366f1)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontWeight: 900, color: '#fff', fontSize: '2rem',
-              boxShadow: '0 0 40px rgba(6,182,212,0.4), 0 0 80px rgba(99,102,241,0.2)',
-              fontFamily: '"Space Grotesk", sans-serif'
-            }}>KS</div>
+            <img 
+                src={favicon} 
+                alt="KnowledgeShare" 
+                style={{ 
+                    width: 80, height: 80, borderRadius: '24px', margin: '0 auto 1.5rem',
+                    boxShadow: '0 0 40px rgba(6,182,212,0.4), 0 0 80px rgba(99,102,241,0.2)',
+                    display: 'block'
+                }} 
+            />
             <h2 style={{
               fontSize: '2rem', fontWeight: 800, letterSpacing: '-0.03em',
               background: 'linear-gradient(135deg, #67e8f9, #a5b4fc, #f9a8d4)',
@@ -125,13 +127,14 @@ const Login = () => {
           {/* Logo (mobile) */}
           <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
             <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none', marginBottom: '2rem' }}>
-              <div style={{
-                width: 42, height: 42, borderRadius: '12px',
-                background: 'linear-gradient(135deg, #06b6d4, #6366f1)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontWeight: 800, color: '#fff', boxShadow: '0 0 20px rgba(6,182,212,0.4)',
-                fontFamily: '"Space Grotesk", sans-serif'
-              }}>KS</div>
+              <img 
+                src={favicon} 
+                alt="KnowledgeShare" 
+                style={{ 
+                    width: 42, height: 42, borderRadius: '12px',
+                    boxShadow: '0 0 20px rgba(6,182,212,0.4)'
+                }} 
+              />
               <span style={{
                 fontWeight: 800, fontSize: '1.3rem',
                 background: 'linear-gradient(135deg, #e2e8f0, #94a3b8)',

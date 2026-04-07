@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import api from '../services/api';
 import { AuthContext } from '../context/AuthContext';
+import favicon from '../assets/favicon.png';
 
 
 const Signup = () => {
@@ -45,7 +46,11 @@ const Signup = () => {
 
                         <div className="relative z-10">
                             <Link to="/" className="inline-flex items-center gap-2 text-slate-900 font-bold group">
-                                <span className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-lg font-bold text-white shadow-lg shadow-emerald-500/30 group-hover:shadow-xl group-hover:shadow-emerald-500/40 group-hover:scale-110 transition-all duration-300">K</span>
+                                <img 
+                                    src={favicon} 
+                                    alt="KnowledgeShare" 
+                                    className="w-10 h-10 rounded-2xl shadow-lg shadow-emerald-500/30 group-hover:shadow-xl group-hover:shadow-emerald-500/40 group-hover:scale-110 transition-all duration-300" 
+                                />
                                 <span className="group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-emerald-600 group-hover:to-teal-600 transition-all duration-300">Knowledge Portal</span>
                             </Link>
                             <h2 className="mt-8 text-3xl font-display font-bold text-transparent bg-clip-text bg-gradient-to-r from-slate-900 to-slate-700">Join the community</h2>
@@ -74,7 +79,11 @@ const Signup = () => {
                     <div className="p-8 md:p-10 bg-white/95 backdrop-blur-sm">
                         <div className="lg:hidden mb-8">
                             <Link to="/" className="inline-flex items-center gap-2 text-slate-900 font-bold group">
-                                <span className="w-9 h-9 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-base font-bold text-white shadow-lg group-hover:shadow-xl group-hover:scale-110 transition-all duration-300">K</span>
+                                <img 
+                                    src={favicon} 
+                                    alt="KnowledgeShare" 
+                                    className="w-9 h-9 rounded-2xl shadow-lg group-hover:shadow-xl group-hover:scale-110 transition-all duration-300" 
+                                />
                                 <span className="group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-emerald-600 group-hover:to-teal-600 transition-all duration-300">Knowledge Portal</span>
                             </Link>
                         </div>

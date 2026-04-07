@@ -2,6 +2,7 @@ import { useState, useContext } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import favicon from '../assets/favicon.png';
 import { AuthContext } from '../context/AuthContext';
 import api from '../services/api';
 
@@ -79,13 +80,14 @@ const Register = () => {
           {/* Header */}
           <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
             <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none', marginBottom: '1.75rem' }}>
-              <div style={{
-                width: 42, height: 42, borderRadius: '12px',
-                background: 'linear-gradient(135deg, #06b6d4, #6366f1)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontWeight: 800, color: '#fff', boxShadow: '0 0 20px rgba(6,182,212,0.4)',
-                fontFamily: '"Space Grotesk", sans-serif'
-              }}>KS</div>
+              <img 
+                src={favicon} 
+                alt="KnowledgeShare" 
+                style={{ 
+                    width: 42, height: 42, borderRadius: '12px',
+                    boxShadow: '0 0 20px rgba(6,182,212,0.4)'
+                }} 
+              />
               <span style={{
                 fontWeight: 800, fontSize: '1.3rem',
                 background: 'linear-gradient(135deg, #e2e8f0, #94a3b8)',

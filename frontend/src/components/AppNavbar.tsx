@@ -2,6 +2,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useContext, useState, useEffect, useRef } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import favicon from '../assets/favicon.png';
 
 interface NavbarProps {
     forceWhite?: boolean;
@@ -85,14 +86,15 @@ const Navbar = (_props: NavbarProps) => {
             }}>
                 {/* ─── Logo ─── */}
                 <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none', flexShrink: 0 }}>
-                    <div style={{
-                        width: 38, height: 38, borderRadius: '10px',
-                        background: 'linear-gradient(135deg, #06b6d4, #6366f1)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontWeight: 800, color: '#fff', fontSize: '1rem',
-                        boxShadow: '0 0 16px rgba(6,182,212,0.4)',
-                        fontFamily: '"Space Grotesk", sans-serif'
-                    }}>K</div>
+                    <img 
+                        src={favicon} 
+                        alt="KnowledgeShare" 
+                        style={{ 
+                            width: 38, height: 38, borderRadius: '10px',
+                            boxShadow: '0 0 16px rgba(6,182,212,0.4)',
+                            objectFit: 'cover'
+                        }} 
+                    />
                     <span style={{
                         fontWeight: 800, fontSize: '1.1rem',
                         background: 'linear-gradient(135deg, #e2e8f0, #94a3b8)',
