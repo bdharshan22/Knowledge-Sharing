@@ -34,6 +34,7 @@ type ProfileUser = {
     learningStreak?: { current: number; longest: number };
     points?: number;
     badges?: string[];
+    role?: string;
     stats?: {
         joinedDaysAgo?: number;
         totalPosts?: number;
@@ -209,8 +210,25 @@ const Profile = () => {
                                 <div className="absolute -top-2 -right-2 bg-gradient-to-br from-green-400 to-emerald-600 w-5 h-5 rounded-full border-4 border-white shadow-lg animate-pulse" />
                             </div>
 
-                            <h1 className="text-3xl font-black text-slate-900 leading-tight mb-1 font-display tracking-tight">{user.name}</h1>
-                            <p className="text-indigo-600 font-bold uppercase tracking-widest text-[10px] mb-4">@{user.username || 'user'}</p>
+                            <div className="flex flex-col items-center mb-6">
+                                <h1 className="text-3xl font-black text-slate-900 leading-tight mb-2 font-display tracking-tight flex items-center justify-center gap-3">
+                                    {user?.name}
+                                    {user?.role === 'admin' ? (
+                                        <span className="bg-gradient-to-r from-indigo-700 to-purple-800 text-white text-[10px] uppercase font-black px-3 py-1 rounded-full shadow-lg shadow-purple-500/30 border border-purple-400/30">
+                                            Admin
+                                        </span>
+                                    ) : user?.role === 'moderator' ? (
+                                        <span className="bg-gradient-to-r from-cyan-600 to-indigo-600 text-white text-[10px] uppercase font-black px-3 py-1 rounded-full shadow-lg shadow-cyan-500/30 border border-cyan-400/30">
+                                            Moderator
+                                        </span>
+                                    ) : (
+                                        <span className="bg-slate-100 text-slate-500 text-[10px] uppercase font-black px-3 py-1 rounded-full border border-slate-200">
+                                            Member
+                                        </span>
+                                    )}
+                                </h1>
+                                <p className="text-indigo-600 font-bold uppercase tracking-widest text-[10px] mb-2">@{user?.username || 'user'}</p>
+                            </div>
                             
                             <p className="text-slate-600 font-medium mb-6 text-sm leading-relaxed px-2">
                                 {user.bio || 'This innovator hasn\'t shared their story yet. Stay tuned for more insights.'}
