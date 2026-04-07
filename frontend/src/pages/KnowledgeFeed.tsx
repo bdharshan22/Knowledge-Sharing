@@ -4,14 +4,14 @@ import { toast } from 'react-hot-toast';
 import api from '../services/api';
 import Navbar from '../components/AppNavbar';
 import { AuthContext } from '../context/AuthContext';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface Post {
     _id: string;
     title: string;
-    content: string; // Kept for type compatibility, though API might omit
+    content: string;
     excerpt?: string;
-    author: { _id: string, name: string, avatar: string };
+    author: { _id: string; name: string; avatar: string };
     createdAt: string;
     likes: string[];
     bookmarks?: string[];
@@ -23,60 +23,60 @@ interface Post {
     isFollowingAuthor?: boolean;
 }
 
+const TYPE_STYLES: Record<string, { bg: string; text: string; border: string; dot: string }> = {
+    question:     { bg: '#fff7ed', text: '#c2410c', border: '#fed7aa', dot: '#f97316' },
+    article:      { bg: '#eff6ff', text: '#1d4ed8', border: '#bfdbfe', dot: '#3b82f6' },
+    tutorial:     { bg: '#f0fdf4', text: '#166534', border: '#bbf7d0', dot: '#22c55e' },
+    discussion:   { bg: '#faf5ff', text: '#7e22ce', border: '#e9d5ff', dot: '#a855f7' },
+    resource:     { bg: '#fefce8', text: '#854d0e', border: '#fef08a', dot: '#eab308' },
+    announcement: { bg: '#fdf2f8', text: '#9d174d', border: '#fbcfe8', dot: '#ec4899' },
+};
+
+const STAT_CARDS = [
+    { key: 'total',         label: 'Feed Items',   icon: '📚', from: '#6366f1', to: '#8b5cf6' },
+    { key: 'questions',     label: 'Questions',    icon: '❓', from: '#f97316', to: '#ef4444' },
+    { key: 'articles',      label: 'Articles',     icon: '📝', from: '#3b82f6', to: '#06b6d4' },
+    { key: 'announcements', label: 'Announcements',icon: '📢', from: '#ec4899', to: '#f43f5e' },
+    { key: 'recent',        label: 'New This Week', icon: '🆕', from: '#22c55e', to: '#10b981' },
+];
+
 const KnowledgeFeed = () => {
     const auth = useContext(AuthContext);
     const user = auth?.user;
     const navigate = useNavigate();
+
     const [posts, setPosts] = useState<Post[]>([]);
     const [loading, setLoading] = useState(true);
-    const [filter, setFilter] = useState('all'); // 'all', 'question', 'article'
+    const [filter, setFilter] = useState('all');
     const [searchQuery, setSearchQuery] = useState('');
     const [showFilters, setShowFilters] = useState(false);
-    const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-    const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>([]);
     const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
-    const [sortBy, setSortBy] = useState('newest'); // 'newest', 'popular', 'trending'
+    const [sortBy, setSortBy] = useState('newest');
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
-    // Load filter preferences from localStorage
     useEffect(() => {
-        const savedFilters = localStorage.getItem('ksp_filter_preferences');
-        if (savedFilters) {
+        const saved = localStorage.getItem('ksp_filter_preferences');
+        if (saved) {
             try {
-                const parsed = JSON.parse(savedFilters);
-                setSelectedCategories(parsed.categories || []);
-                setSelectedDifficulties(parsed.difficulties || []);
-                setSelectedTypes(parsed.types || []);
-                setSortBy(parsed.sortBy || 'newest');
-            } catch (error) {
-                console.error('Failed to parse filter preferences', error);
-            }
+                const p = JSON.parse(saved);
+                setSelectedTypes(p.types || []);
+                setSortBy(p.sortBy || 'newest');
+            } catch { /* ignore */ }
         }
     }, []);
 
-    // Save filter preferences to localStorage
     useEffect(() => {
-        const preferences = {
-            categories: selectedCategories,
-            difficulties: selectedDifficulties,
-            types: selectedTypes,
-            sortBy
-        };
-        localStorage.setItem('ksp_filter_preferences', JSON.stringify(preferences));
-    }, [selectedCategories, selectedDifficulties, selectedTypes, sortBy]);
+        localStorage.setItem('ksp_filter_preferences', JSON.stringify({ types: selectedTypes, sortBy }));
+    }, [selectedTypes, sortBy]);
 
     useEffect(() => {
         const cacheKey = 'ksp_feed_cache_v1';
         const cacheTtlMs = 1000 * 60 * 5;
-
-        // Clear cache if coming from create post (check navigation state)
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('refresh') === 'true') {
             sessionStorage.removeItem(cacheKey);
-            // Clean up URL
             window.history.replaceState({}, '', window.location.pathname);
         }
-
         const cached = sessionStorage.getItem(cacheKey);
         if (cached) {
             try {
@@ -85,771 +85,627 @@ const KnowledgeFeed = () => {
                     setPosts(parsed.data);
                     setLoading(false);
                 }
-            } catch {
-                // ignore cache parse errors
-            }
+            } catch { /* ignore */ }
         }
-
         const fetchPosts = async () => {
             try {
-                // Try personalized feed first
                 const res = await api.get('/posts/feed', { params: { limit: 24 } });
                 let next = res.data;
-
-                // If feed is empty, fall back to regular posts
                 if (!Array.isArray(next) || next.length === 0) {
-                    console.log('Feed empty, falling back to regular posts');
-                    const fallbackRes = await api.get('/posts', { params: { limit: 24 } });
-                    next = fallbackRes.data;
+                    const fb = await api.get('/posts', { params: { limit: 24 } });
+                    next = fb.data;
                 }
-
                 setPosts(Array.isArray(next) ? next : []);
                 sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data: next }));
-            } catch (err) {
-                console.error('Error fetching posts:', err);
-                // Try fallback to regular posts on error
+            } catch {
                 try {
-                    const fallbackRes = await api.get('/posts');
-                    setPosts(Array.isArray(fallbackRes.data) ? fallbackRes.data : []);
-                } catch (fallbackErr) {
-                    console.error('Fallback also failed:', fallbackErr);
-                    setPosts([]);
-                }
-            } finally {
-                setLoading(false);
-            }
+                    const fb = await api.get('/posts');
+                    setPosts(Array.isArray(fb.data) ? fb.data : []);
+                } catch { setPosts([]); }
+            } finally { setLoading(false); }
         };
         fetchPosts();
     }, []);
 
     const handleLike = async (postId: string) => {
-        if (!user) {
-            navigate('/login');
-            return;
-        }
-
+        if (!user) { navigate('/login'); return; }
         try {
             const { data } = await api.put(`/posts/${postId}/like`);
-            setPosts(prev =>
-                prev.map(post =>
-                    post._id === postId ? { ...post, likes: data } : post
-                )
-            );
-        } catch (err) {
-            console.error('Error liking post:', err);
-            // toast.error('Failed to like post'); // Keeping this silent as per instruction
-        }
+            setPosts(prev => prev.map(p => p._id === postId ? { ...p, likes: data } : p));
+        } catch { /* silent */ }
     };
 
     const handleSave = async (postId: string) => {
-        if (!user) {
-            navigate('/login');
-            return;
-        }
-
+        if (!user) { navigate('/login'); return; }
         try {
             const { data } = await api.put(`/posts/${postId}/bookmark`);
-
-            // Determine if bookmarked from data or toggle logic if data doesn't return it directly
-            // Usually API returns the updated user or post status. Assuming data.isBookmarked or similar.
             const isBookmarked = data.isBookmarked;
-
-            setPosts(prev =>
-                prev.map(post => {
-                    if (post._id !== postId) return post;
-                    const currentBookmarks = post.bookmarks || [];
-                    const nextBookmarks = isBookmarked
-                        ? [...currentBookmarks, user._id]
-                        : currentBookmarks.filter((id) => id !== user._id);
-                    return { ...post, bookmarks: nextBookmarks };
-                })
-            );
+            setPosts(prev => prev.map(p => {
+                if (p._id !== postId) return p;
+                const cur = p.bookmarks || [];
+                return { ...p, bookmarks: isBookmarked ? [...cur, user._id] : cur.filter(id => id !== user._id) };
+            }));
             toast.success(isBookmarked ? 'Saved to bookmarks' : 'Removed from bookmarks');
-        } catch (err) {
-            console.error('Error saving post:', err);
-            toast.error('Failed to update bookmark');
-        }
+        } catch { toast.error('Failed to update bookmark'); }
     };
 
     const handleDelete = async (postId: string) => {
-        if (!user) {
-            navigate('/login');
-            return;
-        }
-
-        const confirmed = window.confirm('Delete this post? This cannot be undone.');
-        if (!confirmed) return;
-
+        if (!user) { navigate('/login'); return; }
+        if (!window.confirm('Delete this post? This cannot be undone.')) return;
         try {
             await api.delete(`/posts/${postId}`);
-            setPosts(prev => prev.filter(post => post._id !== postId));
-        } catch (err) {
-            console.error('Error deleting post:', err);
-        }
+            setPosts(prev => prev.filter(p => p._id !== postId));
+        } catch { /* ignore */ }
     };
 
     const handleFollow = async (authorId: string) => {
-        if (!user) {
-            navigate('/login');
-            return;
-        }
-
+        if (!user) { navigate('/login'); return; }
         try {
             const { data } = await api.put(`/users/${authorId}/follow`);
-            const isFollowing = data?.isFollowing;
-            setPosts(prev =>
-                prev.map(post =>
-                    post.author?._id === authorId
-                        ? { ...post, isFollowingAuthor: isFollowing }
-                        : post
-                )
-            );
-        } catch (err) {
-            console.error('Error toggling follow:', err);
-        }
+            setPosts(prev => prev.map(p => p.author?._id === authorId ? { ...p, isFollowingAuthor: data?.isFollowing } : p));
+        } catch { /* ignore */ }
     };
 
-    // Extract all unique tags from posts
     const allTags = useMemo(() => {
-        const tagSet = new Set<string>();
-        posts.forEach(post => {
-            post.tags?.forEach(tag => tagSet.add(tag));
-        });
-        return Array.from(tagSet);
+        const s = new Set<string>();
+        posts.forEach(p => p.tags?.forEach(t => s.add(t)));
+        return Array.from(s);
     }, [posts]);
 
-    // Apply comprehensive filtering
     const filteredPosts = useMemo(() => {
-        let result = [...posts];
-
-        // Basic type filter (legacy)
-        if (filter !== 'all') {
-            result = result.filter(p => p.type === filter);
-        }
-
-        // Advanced filters
-        if (selectedTypes.length > 0) {
-            result = result.filter(p => selectedTypes.includes(p.type));
-        }
-
-        if (selectedTags.length > 0) {
-            result = result.filter(p =>
-                p.tags?.some(tag => selectedTags.includes(tag))
-            );
-        }
-
-        // Sort
-        if (sortBy === 'newest') {
-            result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        } else if (sortBy === 'popular') {
-            result.sort((a, b) => (b.likes?.length || 0) - (a.likes?.length || 0));
-        } else if (sortBy === 'trending') {
-            // Trending = combination of recent + popular
-            result.sort((a, b) => {
-                const aScore = (a.likes?.length || 0) + (a.views || 0) * 0.1;
-                const bScore = (b.likes?.length || 0) + (b.views || 0) * 0.1;
-                const aRecency = Date.now() - new Date(a.createdAt).getTime();
-                const bRecency = Date.now() - new Date(b.createdAt).getTime();
-                return (bScore / (bRecency / 86400000 + 1)) - (aScore / (aRecency / 86400000 + 1));
-            });
-        }
-
-        return result;
+        let r = [...posts];
+        if (filter !== 'all') r = r.filter(p => p.type === filter);
+        if (selectedTypes.length > 0) r = r.filter(p => selectedTypes.includes(p.type));
+        if (selectedTags.length > 0) r = r.filter(p => p.tags?.some(t => selectedTags.includes(t)));
+        if (sortBy === 'newest') r.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        else if (sortBy === 'popular') r.sort((a, b) => (b.likes?.length || 0) - (a.likes?.length || 0));
+        else if (sortBy === 'trending') r.sort((a, b) => {
+            const score = (p: Post) => (p.likes?.length || 0) + (p.views || 0) * 0.1;
+            const age = (p: Post) => (Date.now() - new Date(p.createdAt).getTime()) / 86400000 + 1;
+            return score(b) / age(b) - score(a) / age(a);
+        });
+        return r;
     }, [posts, filter, selectedTypes, selectedTags, sortBy]);
 
-    const stats = useMemo(() => {
-        // We use all the fetched items to calculate stats for the current view
-        const total = posts.length;
-        const articles = posts.filter(p => p.type === 'article').length;
-        const questions = posts.filter(p => p.type === 'question').length;
-        const announcements = posts.filter(p => p.type === 'announcement').length;
-        const recent = posts.filter(p => {
-            const created = new Date(p.createdAt).getTime();
-            return Date.now() - created < 7 * 24 * 60 * 60 * 1000;
-        }).length;
-        return { total, questions, articles, announcements, recent };
-    }, [posts]);
+    const stats = useMemo(() => ({
+        total: posts.length,
+        articles: posts.filter(p => p.type === 'article').length,
+        questions: posts.filter(p => p.type === 'question').length,
+        announcements: posts.filter(p => p.type === 'announcement').length,
+        recent: posts.filter(p => Date.now() - new Date(p.createdAt).getTime() < 7 * 86400000).length,
+    }), [posts]);
 
-    const handleSearchSubmit = (e: React.FormEvent) => {
+    const activeFilterCount = selectedTypes.length + selectedTags.length + (filter !== 'all' ? 1 : 0);
+
+    const toggleFilter = (arr: string[], set: (v: string[]) => void, val: string) =>
+        set(arr.includes(val) ? arr.filter(v => v !== val) : [...arr, val]);
+
+    const clearAll = () => { setSelectedTypes([]); setSelectedTags([]); setSortBy('newest'); setFilter('all'); };
+
+    const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!searchQuery.trim()) return;
-        navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+        if (searchQuery.trim()) navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
     };
 
-    const toggleFilter = (filterArray: string[], setFilterArray: (arr: string[]) => void, value: string) => {
-        if (filterArray.includes(value)) {
-            setFilterArray(filterArray.filter(v => v !== value));
-        } else {
-            setFilterArray([...filterArray, value]);
-        }
-    };
-
-    const clearAllFilters = () => {
-        setSelectedCategories([]);
-        setSelectedDifficulties([]);
-        setSelectedTypes([]);
-        setSelectedTags([]);
-        setSortBy('newest');
-        setFilter('all');
-    };
-
-    const activeFilterCount = selectedCategories.length + selectedDifficulties.length + selectedTypes.length + selectedTags.length + (filter !== 'all' ? 1 : 0);
+    /* ─── LIGHT THEME VARIABLES ─── */
+    const bg = '#f8fafc';
+    const card = '#ffffff';
+    const border = '#e2e8f0';
+    const txt1 = '#0f172a';
+    const txt2 = '#475569';
+    const txt3 = '#94a3b8';
+    const accent = '#6366f1';
 
     return (
-        <div className="min-h-screen relative pb-20">
+        <div style={{ minHeight: '100vh', backgroundColor: bg, fontFamily: '"Inter", sans-serif', overflowX: 'hidden' }}>
             <Navbar />
 
-            {/* Animated Gradient Mesh Background */}
-            <div className="fixed inset-0 gradient-mesh-subtle z-0" />
+            {/* Subtle top gradient strip */}
+            <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 3, background: 'linear-gradient(to right, #6366f1, #06b6d4, #ec4899)', zIndex: 99 }} />
 
-            {/* Floating Orbs */}
-            <div className="fixed top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
-                <div className="absolute top-20 right-0 w-[600px] h-[600px] bg-gradient-to-br from-purple-300/40 to-pink-300/40 rounded-full blur-[140px] animate-float"></div>
-                <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-gradient-to-br from-cyan-300/40 to-blue-300/40 rounded-full blur-[140px] animate-float" style={{ animationDelay: '3s' }}></div>
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gradient-to-br from-emerald-300/30 to-teal-300/30 rounded-full blur-[120px] animate-float" style={{ animationDelay: '6s' }}></div>
-            </div>
+            <div style={{ maxWidth: 1400, margin: '0 auto', padding: '7rem 1.5rem 4rem' }}>
 
-            <div className="relative z-10 w-full px-4 sm:px-6 lg:px-10 pt-28">
-                {/* Dashboard Header */}
-                <div className="mb-10 space-y-6 animate-fade-in-scale">
-                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                {/* ── Header ── */}
+                <div style={{ marginBottom: '2rem' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1.5rem', marginBottom: '2rem' }}>
                         <div>
-                            <div className="text-xs font-bold uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-purple-600">Dashboard</div>
-                            <h1 className="text-3xl md:text-4xl font-display font-bold text-transparent bg-clip-text bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 mt-2">
-                                Welcome back{user?.name ? `, ${user.name}` : ''}
+                            <p style={{ fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: accent, marginBottom: '0.375rem' }}>Dashboard</p>
+                            <h1 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', fontWeight: 900, color: txt1, letterSpacing: '-0.03em', fontFamily: '"Space Grotesk", sans-serif', margin: 0 }}>
+                                Welcome back{user?.name ? `, ${user.name.split(' ')[0]}` : ''} 👋
                             </h1>
-                            <p className="text-slate-600 mt-2 text-lg">Catch up on new knowledge and keep your momentum going.</p>
-
-                            {/* Personalization Hint */}
-                            {!user?.skills?.length && (
-                                <div className="mt-4 p-4 glass-card border-2 border-blue-200/50 flex items-center gap-3 animate-slide-up hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-                                    <span className="text-3xl animate-glow">💡</span>
-                                    <div>
-                                        <p className="text-sm text-blue-800 font-semibold">Your feed looks generic because you haven't set your interests yet.</p>
-                                        <Link to="/settings/profile" className="text-xs text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 font-bold inline-flex items-center gap-1 mt-1">
-                                            Update Profile & Skills
-                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                                        </Link>
-                                    </div>
-                                </div>
-                            )}
+                            <p style={{ color: txt2, marginTop: '0.5rem', fontSize: '1rem' }}>Catch up on new knowledge and keep your momentum going.</p>
                         </div>
-                        <div className="flex flex-wrap items-center gap-3">
-                            <Link to="/create-post" className="btn-primary px-6 py-3 text-sm shadow-2xl shadow-cyan-300/50 hover:shadow-cyan-400/60 relative overflow-hidden group">
-                                <span className="relative z-10 flex items-center gap-2">
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                                    Create Post
-                                </span>
-                                <div className="absolute inset-0 bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                            <Link to="/create-post" style={{
+                                display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+                                padding: '0.7rem 1.5rem', borderRadius: '0.75rem', fontWeight: 700,
+                                fontSize: '0.875rem', textDecoration: 'none', color: '#fff',
+                                background: 'linear-gradient(135deg, #6366f1, #06b6d4)',
+                                boxShadow: '0 4px 14px rgba(99,102,241,0.35)',
+                                transition: 'all 0.2s ease'
+                            }}>
+                                <svg style={{ width: 16, height: 16 }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
+                                Create Post
                             </Link>
-                            <Link to="/collections" className="btn-secondary px-5 py-3 text-sm hover:shadow-xl">
-                                Collections
-                            </Link>
-                            <Link to="/bookmarks" className="btn-secondary px-5 py-3 text-sm hover:shadow-xl">
-                                Bookmarks
-                            </Link>
+                            {[{ to: '/collections', label: 'Collections' }, { to: '/bookmarks', label: 'Bookmarks' }].map(b => (
+                                <Link key={b.to} to={b.to} style={{
+                                    display: 'inline-flex', alignItems: 'center', padding: '0.7rem 1.25rem',
+                                    borderRadius: '0.75rem', fontWeight: 600, fontSize: '0.875rem',
+                                    textDecoration: 'none', color: txt2, backgroundColor: card,
+                                    border: `1px solid ${border}`, transition: 'all 0.2s ease'
+                                }}
+                                onMouseEnter={e => { e.currentTarget.style.borderColor = accent; e.currentTarget.style.color = accent; }}
+                                onMouseLeave={e => { e.currentTarget.style.borderColor = border; e.currentTarget.style.color = txt2; }}>
+                                    {b.label}
+                                </Link>
+                            ))}
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div className="glass-premium p-5 card-hover group">
-                            <div className="text-xs font-bold uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-blue-600">Feed Items</div>
-                            <div className="text-3xl font-bold text-slate-900 mt-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-cyan-600 group-hover:to-blue-600 transition-all duration-300">{stats.total}</div>
-                            <div className="mt-2 h-1 w-0 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full group-hover:w-full transition-all duration-500" />
-                        </div>
-                        <div className="glass-premium p-5 card-hover group">
-                            <div className="text-xs font-bold uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-red-600">Questions</div>
-                            <div className="text-3xl font-bold text-slate-900 mt-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-orange-600 group-hover:to-red-600 transition-all duration-300">{stats.questions}</div>
-                            <div className="mt-2 h-1 w-0 bg-gradient-to-r from-orange-500 to-red-500 rounded-full group-hover:w-full transition-all duration-500" />
-                        </div>
-                        <div className="glass-premium p-5 card-hover group">
-                            <div className="text-xs font-bold uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">Articles</div>
-                            <div className="text-3xl font-bold text-slate-900 mt-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-purple-600 group-hover:to-pink-600 transition-all duration-300">{stats.articles}</div>
-                            <div className="mt-2 h-1 w-0 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full group-hover:w-full transition-all duration-500" />
-                        </div>
-                        <div className="glass-card p-6 group hover:translate-y-[-4px] transition-all duration-300 cursor-pointer" onClick={() => setFilter('announcement')}>
-                            <div className="text-xs font-bold uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500">Announcements</div>
-                            <div className="text-3xl font-bold text-slate-900 mt-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-orange-400 group-hover:to-red-500 transition-all duration-300">{stats.announcements}</div>
-                        </div>
-                        <div className="glass-premium p-5 card-hover group">
-                            <div className="text-xs font-bold uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600">New This Week</div>
-                            <div className="text-3xl font-bold text-slate-900 mt-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-emerald-600 group-hover:to-teal-600 transition-all duration-300">{stats.recent}</div>
-                            <div className="mt-2 h-1 w-0 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full group-hover:w-full transition-all duration-500" />
-                        </div>
-                    </div>
-
-                    <form onSubmit={handleSearchSubmit} className="glass-premium p-5 flex flex-col md:flex-row gap-4 md:items-center hover:shadow-2xl hover:shadow-cyan-500/20 transition-all duration-300">
-                        <div className="flex-1">
-                            <div className="text-xs font-bold uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-slate-600 to-slate-500 mb-2">Search</div>
-                            <div className="relative">
-                                <input
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    placeholder="Search posts, tags, or people..."
-                                    className="w-full rounded-xl border-2 border-slate-200 bg-slate-50/50 px-4 py-3 pl-10 text-slate-900 focus:outline-none focus:border-transparent focus:ring-2 focus:ring-cyan-500/50 focus:bg-white transition-all duration-300"
-                                />
-                                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                    {/* Personalization alert */}
+                    {!user?.skills?.length && (
+                        <div style={{
+                            display: 'flex', alignItems: 'center', gap: '1rem',
+                            padding: '1rem 1.25rem', borderRadius: '1rem', marginBottom: '1.5rem',
+                            background: 'linear-gradient(135deg, #eff6ff, #faf5ff)',
+                            border: '1px solid #c7d2fe'
+                        }}>
+                            <span style={{ fontSize: '1.5rem' }}>💡</span>
+                            <div style={{ flex: 1 }}>
+                                <p style={{ fontWeight: 700, color: '#312e81', fontSize: '0.9rem', margin: 0 }}>Personalize your feed</p>
+                                <p style={{ color: '#6366f1', fontSize: '0.8rem', margin: '0.125rem 0 0' }}>Set your interests to see the most relevant content.</p>
                             </div>
+                            <Link to="/settings/profile" style={{ padding: '0.5rem 1rem', borderRadius: '0.625rem', background: '#6366f1', color: '#fff', fontWeight: 700, fontSize: '0.8rem', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                                Update Profile →
+                            </Link>
                         </div>
-                        <button type="submit" className="btn-primary px-8 py-3 text-sm shadow-xl shadow-cyan-300/40 hover:shadow-cyan-400/50 relative overflow-hidden group">
-                            <span className="relative z-10">Find</span>
-                            <div className="absolute inset-0 bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                        </button>
+                    )}
+
+                    {/* Stat cards */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+                        {STAT_CARDS.map(s => (
+                            <motion.div key={s.key}
+                                whileHover={{ y: -4, boxShadow: '0 12px 28px rgba(0,0,0,0.12)' }}
+                                style={{
+                                    background: card, border: `1px solid ${border}`, borderRadius: '1rem',
+                                    padding: '1.25rem', cursor: 'pointer', transition: 'all 0.25s ease', position: 'relative', overflow: 'hidden'
+                                }}
+                                onClick={() => s.key !== 'total' && s.key !== 'recent' && setFilter(s.key.replace('announcements', 'announcement'))}
+                            >
+                                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(to right, ${s.from}, ${s.to})` }} />
+                                <div style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>{s.icon}</div>
+                                <div style={{ fontSize: '2rem', fontWeight: 900, color: txt1, fontFamily: '"Space Grotesk", sans-serif', lineHeight: 1 }}>
+                                    {stats[s.key as keyof typeof stats]}
+                                </div>
+                                <div style={{ fontSize: '0.7rem', fontWeight: 700, color: txt3, textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: '0.375rem' }}>{s.label}</div>
+                            </motion.div>
+                        ))}
+                    </div>
+
+                    {/* Search bar */}
+                    <form onSubmit={handleSearch} style={{
+                        display: 'flex', gap: '0.75rem', alignItems: 'center',
+                        padding: '0.75rem 1rem', borderRadius: '1rem',
+                        background: card, border: `1px solid ${border}`,
+                        boxShadow: '0 1px 4px rgba(0,0,0,0.05)', marginBottom: '1rem'
+                    }}>
+                        <svg style={{ width: 18, height: 18, color: txt3, flexShrink: 0 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                            placeholder="Search posts, tags, or people..."
+                            style={{ flex: 1, border: 'none', outline: 'none', fontSize: '0.95rem', color: txt1, background: 'transparent', fontFamily: '"Inter", sans-serif' }} />
+                        <button type="submit" style={{
+                            padding: '0.5rem 1.25rem', borderRadius: '0.625rem', border: 'none', cursor: 'pointer',
+                            background: 'linear-gradient(135deg, #6366f1, #06b6d4)', color: '#fff',
+                            fontWeight: 700, fontSize: '0.85rem', flexShrink: 0
+                        }}>Search</button>
                     </form>
 
-                    {/* Advanced Filters Panel */}
-                    <div className="glass-premium p-6">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center gap-3">
-                                <h3 className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 to-purple-600 text-sm uppercase tracking-wider">
-                                    Filters
-                                </h3>
+                    {/* Filters panel */}
+                    <div style={{ background: card, border: `1px solid ${border}`, borderRadius: '1rem', overflow: 'hidden' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.875rem 1.25rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <span style={{ fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: accent }}>Filters</span>
                                 {activeFilterCount > 0 && (
-                                    <span className="px-2 py-1 bg-gradient-to-r from-cyan-500 to-purple-500 text-white text-xs font-bold rounded-full">
-                                        {activeFilterCount}
-                                    </span>
+                                    <span style={{ padding: '0.15rem 0.625rem', background: accent, color: '#fff', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 800 }}>{activeFilterCount}</span>
                                 )}
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
                                 {activeFilterCount > 0 && (
-                                    <button
-                                        onClick={clearAllFilters}
-                                        className="text-xs text-slate-600 hover:text-red-600 font-medium transition-colors"
-                                    >
-                                        Clear All
-                                    </button>
+                                    <button onClick={clearAll} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}>Clear All</button>
                                 )}
-                                <button
-                                    onClick={() => setShowFilters(!showFilters)}
-                                    className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-                                >
-                                    <svg
-                                        className={`w-4 h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`}
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                    </svg>
+                                <button onClick={() => setShowFilters(!showFilters)} style={{ background: 'none', border: 'none', color: txt2, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.8rem', fontWeight: 600 }}>
+                                    {showFilters ? 'Hide' : 'Show'} Filters
+                                    <svg style={{ width: 14, height: 14, transform: showFilters ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                                 </button>
                             </div>
                         </div>
 
-                        {/* Active Filter Chips */}
+                        {/* Active chips */}
                         {activeFilterCount > 0 && (
-                            <div className="flex flex-wrap gap-2 mb-4">
-                                {selectedTypes.map(type => (
-                                    <motion.span
-                                        key={type}
-                                        initial={{ scale: 0.8, opacity: 0 }}
-                                        animate={{ scale: 1, opacity: 1 }}
-                                        exit={{ scale: 0.8, opacity: 0 }}
-                                        className="px-3 py-1 bg-cyan-100 text-cyan-700 text-xs font-bold rounded-full flex items-center gap-2"
-                                    >
-                                        {type}
-                                        <button onClick={() => toggleFilter(selectedTypes, setSelectedTypes, type)}>
-                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                            </svg>
-                                        </button>
-                                    </motion.span>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', padding: '0 1.25rem 0.75rem' }}>
+                                {selectedTypes.map(t => (
+                                    <span key={t} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', padding: '0.25rem 0.75rem', background: '#eff6ff', color: '#1d4ed8', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 700 }}>
+                                        {t}
+                                        <button onClick={() => toggleFilter(selectedTypes, setSelectedTypes, t)} style={{ background: 'none', border: 'none', color: '#1d4ed8', cursor: 'pointer', padding: 0, fontSize: '0.9rem', lineHeight: 1 }}>×</button>
+                                    </span>
                                 ))}
-                                {selectedTags.map(tag => (
-                                    <motion.span
-                                        key={tag}
-                                        initial={{ scale: 0.8, opacity: 0 }}
-                                        animate={{ scale: 1, opacity: 1 }}
-                                        exit={{ scale: 0.8, opacity: 0 }}
-                                        className="px-3 py-1 bg-purple-100 text-purple-700 text-xs font-bold rounded-full flex items-center gap-2"
-                                    >
-                                        #{tag}
-                                        <button onClick={() => toggleFilter(selectedTags, setSelectedTags, tag)}>
-                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                            </svg>
-                                        </button>
-                                    </motion.span>
+                                {selectedTags.map(t => (
+                                    <span key={t} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', padding: '0.25rem 0.75rem', background: '#faf5ff', color: '#7e22ce', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 700 }}>
+                                        #{t}
+                                        <button onClick={() => toggleFilter(selectedTags, setSelectedTags, t)} style={{ background: 'none', border: 'none', color: '#7e22ce', cursor: 'pointer', padding: 0, fontSize: '0.9rem', lineHeight: 1 }}>×</button>
+                                    </span>
                                 ))}
                             </div>
                         )}
 
-                        {/* Collapsible Filter Options */}
-                        {showFilters && (
-                            <motion.div
-                                initial={{ height: 0, opacity: 0 }}
-                                animate={{ height: 'auto', opacity: 1 }}
-                                exit={{ height: 0, opacity: 0 }}
-                                className="space-y-6"
-                            >
-                                {/* Sort Options */}
-                                <div>
-                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Sort By</label>
-                                    <div className="flex flex-wrap gap-2">
-                                        {['newest', 'popular', 'trending'].map(option => (
-                                            <button
-                                                key={option}
-                                                onClick={() => setSortBy(option)}
-                                                className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${sortBy === option
-                                                    ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white shadow-lg'
-                                                    : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
-                                                    }`}
-                                            >
-                                                {option.charAt(0).toUpperCase() + option.slice(1)}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Post Type Filters */}
-                                <div>
-                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Post Type</label>
-                                    <div className="flex flex-wrap gap-2">
-                                        {['article', 'question', 'resource'].map(type => (
-                                            <button
-                                                key={type}
-                                                onClick={() => toggleFilter(selectedTypes, setSelectedTypes, type)}
-                                                className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${selectedTypes.includes(type)
-                                                    ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white shadow-lg'
-                                                    : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
-                                                    }`}
-                                            >
-                                                {type.charAt(0).toUpperCase() + type.slice(1)}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Tag Cloud */}
-                                {allTags.length > 0 && (
-                                    <div>
-                                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
-                                            Popular Tags ({allTags.length})
-                                        </label>
-                                        <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
-                                            {allTags.slice(0, 20).map(tag => (
-                                                <button
-                                                    key={tag}
-                                                    onClick={() => toggleFilter(selectedTags, setSelectedTags, tag)}
-                                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${selectedTags.includes(tag)
-                                                        ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-md'
-                                                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                                                        }`}
-                                                >
-                                                    #{tag}
-                                                </button>
-                                            ))}
+                        <AnimatePresence>
+                            {showFilters && (
+                                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                                    style={{ overflow: 'hidden', borderTop: `1px solid ${border}`, padding: '1.25rem' }}>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2rem' }}>
+                                        <div>
+                                            <p style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: txt3, marginBottom: '0.625rem' }}>Sort By</p>
+                                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                {['newest', 'popular', 'trending'].map(o => (
+                                                    <button key={o} onClick={() => setSortBy(o)} style={{
+                                                        padding: '0.4rem 1rem', borderRadius: '0.5rem', border: `1px solid ${sortBy === o ? accent : border}`,
+                                                        background: sortBy === o ? accent : 'transparent',
+                                                        color: sortBy === o ? '#fff' : txt2, fontWeight: 700,
+                                                        fontSize: '0.8rem', cursor: 'pointer', transition: 'all 0.2s'
+                                                    }}>{o.charAt(0).toUpperCase() + o.slice(1)}</button>
+                                                ))}
+                                            </div>
                                         </div>
+                                        <div>
+                                            <p style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: txt3, marginBottom: '0.625rem' }}>Post Type</p>
+                                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                                {['article', 'question', 'resource', 'tutorial', 'discussion'].map(t => (
+                                                    <button key={t} onClick={() => toggleFilter(selectedTypes, setSelectedTypes, t)} style={{
+                                                        padding: '0.4rem 1rem', borderRadius: '0.5rem',
+                                                        border: `1px solid ${selectedTypes.includes(t) ? accent : border}`,
+                                                        background: selectedTypes.includes(t) ? '#eff6ff' : 'transparent',
+                                                        color: selectedTypes.includes(t) ? accent : txt2,
+                                                        fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', transition: 'all 0.2s'
+                                                    }}>{t.charAt(0).toUpperCase() + t.slice(1)}</button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        {allTags.length > 0 && (
+                                            <div>
+                                                <p style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: txt3, marginBottom: '0.625rem' }}>Tags ({allTags.length})</p>
+                                                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', maxHeight: 80, overflowY: 'auto' }}>
+                                                    {allTags.slice(0, 20).map(t => (
+                                                        <button key={t} onClick={() => toggleFilter(selectedTags, setSelectedTags, t)} style={{
+                                                            padding: '0.3rem 0.75rem', borderRadius: '0.5rem',
+                                                            border: `1px solid ${selectedTags.includes(t) ? '#a855f7' : border}`,
+                                                            background: selectedTags.includes(t) ? '#faf5ff' : 'transparent',
+                                                            color: selectedTags.includes(t) ? '#7e22ce' : txt2,
+                                                            fontWeight: 600, fontSize: '0.75rem', cursor: 'pointer', transition: 'all 0.2s'
+                                                        }}>#{t}</button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
-                                )}
-                            </motion.div>
-                        )}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)_280px] xl:grid-cols-[280px_minmax(0,1fr)_320px] gap-8 lg:gap-10 items-start">
+                {/* ── 3-col layout ── */}
+                <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr 260px', gap: '2rem', alignItems: 'start' }}>
 
-                    {/* Left Sidebar (Navigation/Filter) */}
-                    <div className="lg:col-start-1 hidden lg:block space-y-6 sticky top-28 h-fit">
-                        <div className="glass-card p-6">
-                            <div className="flex items-center space-x-4 mb-6">
-                                <img
-                                    src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.name}&background=e2e8f0&color=0f172a`}
-                                    className="w-12 h-12 rounded-full border-2 border-slate-200"
-                                />
-                                <div>
-                                    <div className="font-bold text-slate-900">{user?.name}</div>
-                                    <div className="text-xs text-slate-600">Full Stack Developer</div>
+                    {/* Left sidebar */}
+                    <div style={{ position: 'sticky', top: '5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        {/* User card */}
+                        <div style={{ background: card, border: `1px solid ${border}`, borderRadius: '1rem', overflow: 'hidden' }}>
+                            <div style={{ height: 48, background: 'linear-gradient(135deg, #6366f1, #06b6d4)' }} />
+                            <div style={{ padding: '0 1rem 1rem' }}>
+                                <img src={user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=6366f1&color=fff&bold=true`}
+                                    style={{ width: 52, height: 52, borderRadius: '50%', border: `3px solid ${card}`, objectFit: 'cover', marginTop: -26, display: 'block' }} />
+                                <div style={{ fontWeight: 800, color: txt1, fontSize: '0.95rem', marginTop: '0.5rem', fontFamily: '"Space Grotesk", sans-serif' }}>{user?.name || 'Guest'}</div>
+                                <div style={{ fontSize: '0.75rem', color: txt3, marginBottom: '0.875rem' }}>{user?.bio || 'Knowledge Sharer'}</div>
+                                <div style={{ borderTop: `1px solid ${border}`, paddingTop: '0.875rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                                    {[
+                                        { to: '/dashboard', icon: '🏠', label: 'My Feed', active: true },
+                                        { to: '/bookmarks', icon: '🔖', label: 'Bookmarks' },
+                                        { to: '/collections', icon: '📚', label: 'Collections' },
+                                        { to: '/my-posts', icon: '✏️', label: 'My Posts' },
+                                        { to: '/leaderboard', icon: '🏆', label: 'Leaderboard' },
+                                    ].map(item => (
+                                        <Link key={item.to} to={item.to} style={{
+                                            display: 'flex', alignItems: 'center', gap: '0.625rem',
+                                            padding: '0.5rem 0.625rem', borderRadius: '0.5rem',
+                                            textDecoration: 'none', fontSize: '0.85rem', fontWeight: 600,
+                                            color: item.active ? accent : txt2,
+                                            background: item.active ? '#eff6ff' : 'transparent',
+                                            transition: 'all 0.15s ease'
+                                        }}
+                                        onMouseEnter={e => { if (!item.active) { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.color = accent; } }}
+                                        onMouseLeave={e => { if (!item.active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = txt2; } }}>
+                                            <span>{item.icon}</span>{item.label}
+                                        </Link>
+                                    ))}
                                 </div>
-                            </div>
-                            <div className="space-y-1">
-                                <Link to="/dashboard" className="flex items-center justify-between px-3 py-2 bg-indigo-100 text-indigo-700 rounded-lg font-medium text-sm border border-indigo-200">
-                                    <div className="flex items-center gap-3">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
-                                        </svg>
-                                        <span>My Feed</span>
-                                    </div>
-                                    <span className="bg-indigo-200 text-indigo-700 text-xs px-2 py-0.5 rounded-full">12</span>
-                                </Link>
-                                <Link to="/bookmarks" className="flex items-center px-3 py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-lg font-medium text-sm transition-colors gap-3">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" />
-                                    </svg>
-                                    <span>Bookmarks</span>
-                                </Link>
-                                <Link to="/collections" className="flex items-center px-3 py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-lg font-medium text-sm transition-colors gap-3">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5" />
-                                    </svg>
-                                    <span>Collections</span>
-                                </Link>
-                                <Link to="/my-posts" className="flex items-center px-3 py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-lg font-medium text-sm transition-colors gap-3">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-                                    </svg>
-                                    <span>My Posts</span>
-                                </Link>
                             </div>
                         </div>
 
-                        <div className="glass-card p-6">
-                            <h3 className="font-bold text-slate-900 mb-4 text-xs uppercase tracking-wider text-slate-600">Trending Topics</h3>
-                            <div className="flex flex-wrap gap-2">
-                                {['JavaScript', 'React', 'Node.js', 'Python', 'Design', 'Career', 'AI', 'System Design'].map(tag => (
-                                    <span key={tag} className="px-3 py-1 bg-slate-100 text-slate-600 text-xs font-medium rounded-full hover:bg-cyan-100 hover:text-cyan-700 hover:border-cyan-200 border border-slate-200 cursor-pointer transition-all">
-                                        {tag}
-                                    </span>
+                        {/* Trending tags */}
+                        <div style={{ background: card, border: `1px solid ${border}`, borderRadius: '1rem', padding: '1rem' }}>
+                            <p style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: accent, marginBottom: '0.75rem' }}>Trending Topics</p>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                                {['JavaScript', 'React', 'Node.js', 'Python', 'AI', 'Design', 'Career', 'DevOps'].map(t => (
+                                    <button key={t} onClick={() => toggleFilter(selectedTags, setSelectedTags, t)} style={{
+                                        padding: '0.25rem 0.625rem', borderRadius: '0.375rem', fontSize: '0.75rem', fontWeight: 600,
+                                        border: `1px solid ${selectedTags.includes(t) ? accent : border}`,
+                                        background: selectedTags.includes(t) ? '#eff6ff' : '#f8fafc',
+                                        color: selectedTags.includes(t) ? accent : txt2, cursor: 'pointer', transition: 'all 0.15s'
+                                    }}>{t}</button>
                                 ))}
                             </div>
                         </div>
                     </div>
 
                     {/* Main Feed */}
-                    <div className="lg:col-start-2 space-y-6">
-                        {/* Feed Header */}
-                        {!loading && !user?.skills?.length && (
-                            <div className="mb-8 bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-100 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-sm animate-fade-in-down">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm text-2xl">
-                                        ✨
-                                    </div>
-                                    <div>
-                                        <h3 className="font-bold text-slate-900 text-lg">Personalize Your Feed</h3>
-                                        <p className="text-slate-600 text-sm">Select your technical interests to see the most relevant content.</p>
-                                    </div>
-                                </div>
-                                <div className="flex gap-3">
-                                    <Link
-                                        to="/settings/profile"
-                                        className="btn-primary px-5 py-2.5 text-sm whitespace-nowrap"
-                                    >
-                                        Customize Now
-                                    </Link>
-                                    <Link
-                                        to="/community"
-                                        className="btn-secondary bg-white px-5 py-2.5 text-sm whitespace-nowrap"
-                                    >
-                                        Explore
-                                    </Link>
-                                </div>
-                            </div>
-                        )}
+                    <div>
+                        {/* Type filter tabs */}
+                        <div style={{ display: 'flex', gap: '0.25rem', marginBottom: '1.25rem', background: card, border: `1px solid ${border}`, borderRadius: '0.875rem', padding: '0.375rem' }}>
+                            {['all', 'question', 'article', 'announcement'].map(f => (
+                                <button key={f} onClick={() => setFilter(f)} style={{
+                                    flex: 1, padding: '0.5rem 0.5rem', borderRadius: '0.625rem', border: 'none', cursor: 'pointer',
+                                    fontWeight: 700, fontSize: '0.8rem', textTransform: 'capitalize', transition: 'all 0.2s',
+                                    background: filter === f ? accent : 'transparent',
+                                    color: filter === f ? '#fff' : txt2,
+                                    boxShadow: filter === f ? '0 2px 8px rgba(99,102,241,0.3)' : 'none'
+                                }}>{f === 'all' ? 'All Posts' : f + 's'}</button>
+                            ))}
+                            <Link to="/create-post" style={{
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                width: 36, height: 36, borderRadius: '0.625rem', flexShrink: 0, alignSelf: 'center',
+                                background: 'linear-gradient(135deg, #6366f1, #06b6d4)', textDecoration: 'none'
+                            }}>
+                                <svg style={{ width: 16, height: 16, color: '#fff' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
+                            </Link>
+                        </div>
 
-                        {/* Existing Feed Logic */}
-                        <>
-                            <div className="flex items-center justify-between glass-card p-2 rounded-xl">
-                                <div className="flex space-x-1">
-                                    {['all', 'question', 'article', 'announcement'].map(f => (
-                                        <button
-                                            key={f}
-                                            onClick={() => setFilter(f)}
-                                            className={`px-4 py-2 rounded-lg text-sm font-bold capitalize transition-all ${filter === f
-                                                ? 'bg-white text-slate-900 shadow-md border border-slate-200'
-                                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                                                }`}
-                                        >
-                                            {f}s
-                                        </button>
-                                    ))}
-                                </div>
-                                <Link to="/create-post" className="p-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-lg hover:shadow-lg hover:shadow-cyan-500/20 transition-all hover:scale-105 active:scale-95">
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                                </Link>
-                            </div>
-
-                            {loading && posts.length === 0 ? (
-                                <div className="space-y-4">
-                                    {[1, 2, 3].map((item) => (
-                                        <div key={`skeleton-${item}`} className="glass-card p-6 animate-pulse">
-                                            <div className="flex items-start justify-between mb-4">
-                                                <div className="flex items-center space-x-3">
-                                                    <div className="w-10 h-10 rounded-full bg-slate-200"></div>
-                                                    <div>
-                                                        <div className="h-3 w-28 bg-slate-200 rounded"></div>
-                                                        <div className="h-2 w-20 bg-slate-200 rounded mt-2"></div>
-                                                    </div>
-                                                </div>
-                                                <div className="h-6 w-16 bg-slate-200 rounded-full"></div>
-                                            </div>
-                                            <div className="h-4 w-3/4 bg-slate-200 rounded mb-3"></div>
-                                            <div className="h-3 w-full bg-slate-200 rounded mb-2"></div>
-                                            <div className="h-3 w-5/6 bg-slate-200 rounded"></div>
-                                            <div className="mt-4 flex gap-2">
-                                                <div className="h-6 w-14 bg-slate-200 rounded"></div>
-                                                <div className="h-6 w-16 bg-slate-200 rounded"></div>
+                        {/* Posts */}
+                        {loading && posts.length === 0 ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                {[1, 2, 3].map(i => (
+                                    <div key={i} style={{ background: card, border: `1px solid ${border}`, borderRadius: '1rem', padding: '1.5rem', animation: 'pulse 1.5s infinite' }}>
+                                        <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem' }}>
+                                            <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#e2e8f0' }} />
+                                            <div style={{ flex: 1 }}>
+                                                <div style={{ height: 12, background: '#e2e8f0', borderRadius: 6, marginBottom: 6, width: '40%' }} />
+                                                <div style={{ height: 10, background: '#f1f5f9', borderRadius: 6, width: '25%' }} />
                                             </div>
                                         </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <motion.div layout className="space-y-4">
-                                    {filteredPosts.map((post, i) => {
-                                        const isLiked = user ? post.likes?.includes(user._id) : false;
-                                        const isSaved = user ? post.bookmarks?.includes(user._id) : false;
-                                        const isAuthor = user && post.author?._id === user._id;
-                                        const showFollow = !isAuthor && !!post.author?._id;
-                                        const isFollowing = !!post.isFollowingAuthor;
-                                        return (
-                                            <motion.div
-                                                key={post._id}
-                                                initial={{ opacity: 0, y: 20 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                transition={{ delay: i * 0.05 }}
-                                                className="glass-card p-6 relative overflow-hidden group hover:border-cyan-500/30 transition-colors"
-                                            >
-                                                <div className={`absolute top-0 left-0 w-1 h-full ${post.type === 'question' ? 'bg-orange-500' : 'bg-blue-500'
-                                                    }`}></div>
+                                        <div style={{ height: 18, background: '#e2e8f0', borderRadius: 6, marginBottom: 8, width: '75%' }} />
+                                        <div style={{ height: 12, background: '#f1f5f9', borderRadius: 6, width: '100%' }} />
+                                    </div>
+                                ))}
+                            </div>
+                        ) : filteredPosts.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: '4rem 2rem', background: card, border: `1px solid ${border}`, borderRadius: '1rem' }}>
+                                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔍</div>
+                                <h3 style={{ color: txt1, fontWeight: 700, marginBottom: '0.5rem' }}>No posts found</h3>
+                                <p style={{ color: txt2, fontSize: '0.9rem', marginBottom: '1.25rem' }}>Try adjusting your filters or search terms.</p>
+                                <button onClick={clearAll} style={{ padding: '0.6rem 1.5rem', borderRadius: '0.625rem', background: accent, color: '#fff', fontWeight: 700, fontSize: '0.875rem', border: 'none', cursor: 'pointer' }}>
+                                    Clear Filters
+                                </button>
+                            </div>
+                        ) : (
+                            <motion.div layout style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                {filteredPosts.map((post, i) => {
+                                    const isLiked = user ? post.likes?.includes(user._id) : false;
+                                    const isSaved = user ? post.bookmarks?.includes(user._id) : false;
+                                    const isAuthor = user && post.author?._id === user._id;
+                                    const typeStyle = TYPE_STYLES[post.type] || TYPE_STYLES.article;
+                                    return (
+                                        <motion.div key={post._id}
+                                            initial={{ opacity: 0, y: 16 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: i * 0.04 }}
+                                            whileHover={{ y: -2 }}
+                                            style={{
+                                                background: card, border: `1px solid ${border}`,
+                                                borderRadius: '1rem', padding: '1.5rem',
+                                                position: 'relative', overflow: 'hidden',
+                                                boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+                                                transition: 'box-shadow 0.25s ease'
+                                            }}
+                                        >
+                                            {/* Type color accent */}
+                                            <div style={{ position: 'absolute', top: 0, left: 0, width: 4, height: '100%', background: `linear-gradient(to bottom, ${typeStyle.dot}, transparent)` }} />
 
-                                                <div className="flex items-start justify-between mb-4">
-                                                    <div className="flex items-center space-x-3">
-                                                        <img
-                                                            src={post.author?.avatar || `https://ui-avatars.com/api/?name=${post.author?.name || 'User'}&background=e2e8f0&color=0f172a`}
-                                                            className="w-10 h-10 rounded-full border border-slate-200"
-                                                        />
-                                                        <div>
-                                                            {post.author?._id ? (
-                                                                <Link to={`/users/${post.author._id}`} className="font-bold text-slate-900 hover:text-cyan-600 transition-colors text-sm block">
-                                                                    {post.author.name}
-                                                                </Link>
-                                                            ) : (
-                                                                <span className="font-bold text-slate-900 text-sm block">
-                                                                    {post.author?.name || 'Unknown User'}
-                                                                </span>
-                                                            )}
-                                                            <div className="text-xs text-slate-500 font-medium">
-                                                                {new Date(post.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                                                            </div>
+                                            {/* Author + meta row */}
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.875rem', paddingLeft: '0.5rem' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+                                                    <img src={post.author?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author?.name || 'U')}&background=e2e8f0&color=475569&bold=true`}
+                                                        style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', border: `2px solid ${border}` }} />
+                                                    <div>
+                                                        {post.author?._id ? (
+                                                            <Link to={`/users/${post.author._id}`} style={{ fontWeight: 700, color: txt1, fontSize: '0.875rem', textDecoration: 'none' }}
+                                                                onMouseEnter={e => e.currentTarget.style.color = accent}
+                                                                onMouseLeave={e => e.currentTarget.style.color = txt1}>
+                                                                {post.author.name}
+                                                            </Link>
+                                                        ) : (
+                                                            <span style={{ fontWeight: 700, color: txt1, fontSize: '0.875rem' }}>{post.author?.name || 'Unknown'}</span>
+                                                        )}
+                                                        <div style={{ fontSize: '0.75rem', color: txt3 }}>
+                                                            {new Date(post.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                                                         </div>
                                                     </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide border ${post.type === 'question' ? 'bg-orange-100 text-orange-700 border-orange-200' : 'bg-blue-100 text-blue-700 border-blue-200'
-                                                            }`}>
-                                                            {post.type}
-                                                        </span>
-                                                        {showFollow && (
-                                                            <button
-                                                                onClick={() => handleFollow(post.author._id)}
-                                                                className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide border transition-colors ${isFollowing
-                                                                    ? 'bg-slate-900 text-white border-slate-900'
-                                                                    : 'bg-white text-slate-600 border-slate-200 hover:text-cyan-600 hover:border-cyan-200'
-                                                                    }`}
-                                                            >
-                                                                {isFollowing ? 'Following' : 'Follow'}
-                                                            </button>
-                                                        )}
-                                                    </div>
                                                 </div>
+                                                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                                    <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '0.25rem 0.75rem', borderRadius: '999px', textTransform: 'uppercase', letterSpacing: '0.06em', background: typeStyle.bg, color: typeStyle.text, border: `1px solid ${typeStyle.border}` }}>
+                                                        {post.type}
+                                                    </span>
+                                                    {!isAuthor && post.author?._id && (
+                                                        <button onClick={() => handleFollow(post.author._id)} style={{
+                                                            padding: '0.25rem 0.75rem', borderRadius: '999px', border: `1px solid ${post.isFollowingAuthor ? accent : border}`,
+                                                            background: post.isFollowingAuthor ? '#eff6ff' : 'transparent',
+                                                            color: post.isFollowingAuthor ? accent : txt2,
+                                                            fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s'
+                                                        }}>
+                                                            {post.isFollowingAuthor ? '✓ Following' : '+ Follow'}
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
 
-                                                <Link to={`/posts/${post._id}`} className="block group-hover:opacity-100 transition-opacity">
-                                                    <h2 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-cyan-600 transition-colors">
-                                                        {post.title}
-                                                    </h2>
-                                                    <p className="text-slate-600 line-clamp-2 mb-4 text-sm leading-relaxed">
-                                                        {post.excerpt || (post.content ? post.content.replace(/[#*`]/g, '') : '')}
-                                                    </p>
-                                                </Link>
+                                            {/* Title and excerpt */}
+                                            <Link to={`/posts/${post._id}`} style={{ textDecoration: 'none', display: 'block', paddingLeft: '0.5rem' }}>
+                                                <h2 style={{ fontSize: '1.125rem', fontWeight: 800, color: txt1, marginBottom: '0.5rem', lineHeight: 1.3, letterSpacing: '-0.01em', fontFamily: '"Space Grotesk", sans-serif', transition: 'color 0.2s' }}
+                                                    onMouseEnter={e => e.currentTarget.style.color = accent}
+                                                    onMouseLeave={e => e.currentTarget.style.color = txt1}>
+                                                    {post.title}
+                                                </h2>
+                                                <p style={{ color: txt2, fontSize: '0.9rem', lineHeight: 1.65, marginBottom: '0.875rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                                                    {post.excerpt || (post.content?.replace(/[#*`]/g, '').slice(0, 180) + '...')}
+                                                </p>
+                                            </Link>
 
-                                                {post.feedReasons && post.feedReasons.length > 0 && (
-                                                    <div className="flex flex-wrap gap-2 mb-4">
-                                                        {post.feedReasons.map((reason, idx) => (
-                                                            <span key={`${post._id}-reason-${idx}`} className="text-[10px] uppercase tracking-widest font-bold text-indigo-700 bg-indigo-100 px-2 py-1 rounded-full border border-indigo-200">
-                                                                {reason}
-                                                            </span>
-                                                        ))}
-                                                    </div>
-                                                )}
-
-                                                <div className="flex flex-wrap gap-2 mb-4">
-                                                    {post.tags?.slice(0, 3).map((tag: string) => (
-                                                        <span key={tag} className="text-xs font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2 py-1 rounded hover:text-cyan-600 transition-colors">
+                                            {/* Tags */}
+                                            {post.tags && post.tags.length > 0 && (
+                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem', marginBottom: '1rem', paddingLeft: '0.5rem' }}>
+                                                    {post.tags.slice(0, 3).map(tag => (
+                                                        <button key={tag} onClick={() => toggleFilter(selectedTags, setSelectedTags, tag)} style={{
+                                                            padding: '0.2rem 0.625rem', borderRadius: '0.375rem', fontSize: '0.75rem', fontWeight: 600,
+                                                            border: `1px solid ${border}`, background: '#f8fafc', color: txt2, cursor: 'pointer', transition: 'all 0.15s'
+                                                        }}
+                                                        onMouseEnter={e => { e.currentTarget.style.background = '#eff6ff'; e.currentTarget.style.color = accent; e.currentTarget.style.borderColor = accent; }}
+                                                        onMouseLeave={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.color = txt2; e.currentTarget.style.borderColor = border; }}>
                                                             #{tag}
-                                                        </span>
+                                                        </button>
                                                     ))}
                                                 </div>
+                                            )}
 
-                                                <div className="flex items-center justify-between pt-4 border-t border-slate-200">
-                                                    <div className="flex gap-4">
-                                                        <button
-                                                            onClick={() => handleLike(post._id)}
-                                                            className={`flex items-center text-sm transition-colors ${isLiked ? 'text-cyan-700' : 'text-slate-600 group-hover:text-slate-700'}`}
-                                                        >
-                                                            <svg className="w-5 h-5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
-                                                            {post.likes?.length || 0}
-                                                        </button>
-                                                        <div className="flex items-center text-slate-600 text-sm group-hover:text-slate-700 transition-colors">
-                                                            <svg className="w-5 h-5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
-                                                            {post.comments?.length || 0}
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="flex gap-2 items-center">
-                                                        <button
-                                                            onClick={() => handleSave(post._id)}
-                                                            className={`text-xs font-bold uppercase tracking-wide px-2 py-1 rounded border transition-colors ${isSaved ? 'text-cyan-700 bg-cyan-100 border-cyan-200' : 'text-slate-600 bg-slate-100 border-slate-200 hover:text-cyan-600'}`}
-                                                        >
-                                                            {isSaved ? 'Saved' : 'Save'}
-                                                        </button>
-                                                        {isAuthor && (
-                                                            <Link
-                                                                to={`/posts/${post._id}`}
-                                                                className="text-xs font-bold uppercase tracking-wide px-2 py-1 rounded border border-slate-200 text-slate-600 hover:text-cyan-600 bg-white"
-                                                            >
-                                                                Edit
-                                                            </Link>
-                                                        )}
-                                                        {isAuthor && (
-                                                            <button
-                                                                onClick={() => handleDelete(post._id)}
-                                                                className="text-xs font-bold uppercase tracking-wide px-2 py-1 rounded border border-red-200 text-red-600 hover:text-red-700 bg-red-50"
-                                                            >
-                                                                Delete
-                                                            </button>
-                                                        )}
-                                                    </div>
+                                            {/* Action bar */}
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '0.875rem', borderTop: `1px solid ${border}`, paddingLeft: '0.5rem' }}>
+                                                <div style={{ display: 'flex', gap: '1.25rem' }}>
+                                                    <button onClick={() => handleLike(post._id)} style={{
+                                                        display: 'flex', alignItems: 'center', gap: '0.375rem',
+                                                        background: 'none', border: 'none', cursor: 'pointer',
+                                                        fontSize: '0.85rem', fontWeight: 600,
+                                                        color: isLiked ? '#e11d48' : txt3, transition: 'color 0.2s'
+                                                    }}>
+                                                        <svg style={{ width: 17, height: 17 }} fill={isLiked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
+                                                        {post.likes?.length || 0}
+                                                    </button>
+                                                    <Link to={`/posts/${post._id}`} style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: txt3, textDecoration: 'none', fontSize: '0.85rem', fontWeight: 600 }}>
+                                                        <svg style={{ width: 17, height: 17 }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                                                        {post.comments?.length || 0}
+                                                    </Link>
+                                                    {post.views !== undefined && (
+                                                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: txt3, fontSize: '0.85rem', fontWeight: 600 }}>
+                                                            <svg style={{ width: 17, height: 17 }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                                                            {post.views}
+                                                        </span>
+                                                    )}
                                                 </div>
-                                            </motion.div>
-                                        );
-                                    })}
-                                </motion.div>
-                            )}
-                        </>
-
+                                                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                                    <button onClick={() => handleSave(post._id)} style={{
+                                                        padding: '0.3rem 0.75rem', borderRadius: '0.5rem', fontSize: '0.75rem', fontWeight: 700,
+                                                        border: `1px solid ${isSaved ? accent : border}`,
+                                                        background: isSaved ? '#eff6ff' : 'transparent',
+                                                        color: isSaved ? accent : txt2, cursor: 'pointer', transition: 'all 0.2s'
+                                                    }}>{isSaved ? '✓ Saved' : 'Save'}</button>
+                                                    {isAuthor && (
+                                                        <button onClick={() => handleDelete(post._id)} style={{
+                                                            padding: '0.3rem 0.75rem', borderRadius: '0.5rem', fontSize: '0.75rem', fontWeight: 700,
+                                                            border: '1px solid #fecaca', background: '#fff5f5', color: '#dc2626', cursor: 'pointer', transition: 'all 0.2s'
+                                                        }}>Delete</button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    );
+                                })}
+                            </motion.div>
+                        )}
                     </div>
 
-                    {/* Right Sidebar (Stats/Leaderboard) */}
-                    <div className="lg:col-start-3 hidden lg:block space-y-6 sticky top-28 h-fit">
-                        <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl p-6 text-white shadow-xl shadow-indigo-500/20 relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
-                            <h3 className="font-bold text-lg mb-1 relative z-10">Weekly Challenge</h3>
-                            <p className="text-indigo-100 text-sm mb-4 relative z-10">Complete 3 Learning Paths to earn the "Fast Learner" badge.</p>
-                            <div className="w-full bg-black/20 rounded-full h-2 mb-2 relative z-10">
-                                <div className="bg-white rounded-full h-2 w-1/3 shadow-[0_0_10px_rgba(255,255,255,0.5)]"></div>
-                            </div>
-                            <div className="flex justify-between text-xs text-indigo-100 font-medium relative z-10">
-                                <span>1/3 Completed</span>
-                                <span>33%</span>
+                    {/* Right Sidebar */}
+                    <div style={{ position: 'sticky', top: '5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        {/* Weekly Challenge */}
+                        <div style={{ borderRadius: '1rem', padding: '1.25rem', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', position: 'relative', overflow: 'hidden' }}>
+                            <div style={{ position: 'absolute', top: -20, right: -20, width: 80, height: 80, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', filter: 'blur(20px)' }} />
+                            <div style={{ position: 'relative', zIndex: 1 }}>
+                                <div style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>🎯</div>
+                                <h3 style={{ fontWeight: 800, fontSize: '0.95rem', marginBottom: '0.375rem', fontFamily: '"Space Grotesk", sans-serif' }}>Weekly Challenge</h3>
+                                <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.75)', marginBottom: '1rem', lineHeight: 1.5 }}>Complete 3 Learning Paths to earn the "Fast Learner" badge.</p>
+                                <div style={{ height: 6, background: 'rgba(0,0,0,0.2)', borderRadius: 999, overflow: 'hidden', marginBottom: '0.375rem' }}>
+                                    <div style={{ height: '100%', width: '33%', background: 'rgba(255,255,255,0.9)', borderRadius: 999 }} />
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'rgba(255,255,255,0.6)', fontWeight: 600 }}>
+                                    <span>1 / 3 completed</span><span>33%</span>
+                                </div>
                             </div>
                         </div>
 
-                        <div className="glass-card p-6">
-                            <h3 className="font-bold text-slate-900 mb-4 flex items-center text-sm uppercase tracking-wider text-slate-600">
-                                <svg className="w-5 h-5 mr-2 text-yellow-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
-                                Top Contributors
-                            </h3>
-                            <div className="space-y-4">
-                                {[1, 2, 3].map((i) => (
-                                    <div key={i} className="flex items-center justify-between group cursor-pointer hover:bg-slate-100 p-2 -mx-2 rounded-lg transition-colors">
-                                        <div className="flex items-center space-x-3">
-                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${i === 1 ? 'bg-yellow-100 text-yellow-700 border border-yellow-200' : i === 2 ? 'bg-slate-200 text-slate-600 border border-slate-200' : 'bg-orange-100 text-orange-700 border border-orange-200'}`}>{i}</div>
-                                            <span className="font-medium text-slate-700 text-sm group-hover:text-slate-900 transition-colors">User {i}</span>
+                        {/* Top contributors */}
+                        <div style={{ background: card, border: `1px solid ${border}`, borderRadius: '1rem', padding: '1.25rem' }}>
+                            <p style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: accent, marginBottom: '1rem' }}>Top Contributors</p>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+                                {[
+                                    { name: 'Alex Chen', pts: '2.4k', role: 'AI & ML', rank: 1 },
+                                    { name: 'Priya Sharma', pts: '1.9k', role: 'Frontend', rank: 2 },
+                                    { name: 'Marcus Webb', pts: '1.6k', role: 'DevOps', rank: 3 },
+                                ].map((c, i) => (
+                                    <div key={c.name} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                        <div style={{
+                                            width: 24, height: 24, borderRadius: '50%', flexShrink: 0,
+                                            background: i === 0 ? '#fef3c7' : i === 1 ? '#f1f5f9' : '#fff7ed',
+                                            border: `2px solid ${i === 0 ? '#f59e0b' : i === 1 ? '#94a3b8' : '#f97316'}`,
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            fontSize: '0.65rem', fontWeight: 900,
+                                            color: i === 0 ? '#92400e' : i === 1 ? '#475569' : '#7c2d12'
+                                        }}>{c.rank}</div>
+                                        <img src={`https://i.pravatar.cc/40?img=${i + 30}`}
+                                            style={{ width: 34, height: 34, borderRadius: '50%', border: `2px solid ${border}`, objectFit: 'cover' }} />
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ fontWeight: 700, color: txt1, fontSize: '0.85rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.name}</div>
+                                            <div style={{ fontSize: '0.72rem', color: txt3 }}>{c.role}</div>
                                         </div>
-                                        <span className="text-xs font-bold text-cyan-700 bg-cyan-100 px-2 py-1 rounded-full border border-cyan-200">1.2k pts</span>
+                                        <span style={{ fontSize: '0.72rem', fontWeight: 800, color: accent, background: '#eff6ff', padding: '0.2rem 0.5rem', borderRadius: '999px', flexShrink: 0 }}>{c.pts}</span>
                                     </div>
+                                ))}
+                                <Link to="/leaderboard" style={{ display: 'block', textAlign: 'center', fontSize: '0.8rem', fontWeight: 700, color: accent, textDecoration: 'none', paddingTop: '0.5rem', borderTop: `1px solid ${border}` }}>
+                                    View Full Leaderboard →
+                                </Link>
+                            </div>
+                        </div>
+
+                        {/* Quick links */}
+                        <div style={{ background: card, border: `1px solid ${border}`, borderRadius: '1rem', padding: '1.25rem' }}>
+                            <p style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: accent, marginBottom: '0.875rem' }}>Explore</p>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                                {[
+                                    { to: '/learning-paths', icon: '🗺️', label: 'Learning Paths' },
+                                    { to: '/projects', icon: '🚀', label: 'Project Gallery' },
+                                    { to: '/events', icon: '📅', label: 'Upcoming Events' },
+                                    { to: '/community', icon: '💬', label: 'Community Hub' },
+                                ].map(item => (
+                                    <Link key={item.to} to={item.to} style={{
+                                        display: 'flex', alignItems: 'center', gap: '0.625rem',
+                                        padding: '0.5rem 0.625rem', borderRadius: '0.5rem',
+                                        textDecoration: 'none', fontSize: '0.85rem', fontWeight: 600,
+                                        color: txt2, transition: 'all 0.15s ease'
+                                    }}
+                                    onMouseEnter={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.color = accent; }}
+                                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = txt2; }}>
+                                        <span>{item.icon}</span>{item.label}
+                                    </Link>
                                 ))}
                             </div>
                         </div>
                     </div>
-
                 </div>
             </div>
         </div>

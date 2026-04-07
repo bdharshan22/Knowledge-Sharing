@@ -2,321 +2,253 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/AppNavbar';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-    BookmarkIcon,
-    SparklesIcon,
-    ArrowTrendingUpIcon
-} from '@heroicons/react/24/outline';
+
+const TABS = ['For You', 'Technology', 'Design', 'Productivity'] as const;
+type Tab = typeof TABS[number];
+
+const FEED_CONTENT: Record<Tab, Array<{ author: string; title: string; desc: string; tag: string; date: string; img: string }>> = {
+    'For You': [
+        { author: "Will Larson", title: "Writing an Engineering Strategy", desc: "Strategies are about tradeoffs. Good strategies make those tradeoffs explicit and help teams move faster by reducing decision paralysis.", tag: "Management", date: "Dec 4", img: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=400&h=300&fit=crop" },
+        { author: "Addy Osmani", title: "Image Optimization in 2025", desc: "New formats like AVIF, proper sizing attributes, and lazy loading strategies can cut your LCP in half.", tag: "Performance", date: "Dec 3", img: "https://images.unsplash.com/photo-1550439062-609e1531270e?w=400&h=300&fit=crop" },
+        { author: "Kent C. Dodds", title: "Full Stack Components with RSC", desc: "The lines between client and server are blurring. Here is how to think about component composition in a RSC world.", tag: "React", date: "Dec 1", img: "https://images.unsplash.com/photo-1633356122102-3fe601e15fae?w=400&h=300&fit=crop" },
+    ],
+    'Technology': [
+        { author: "Tech Crunch", title: "The Rise of Quantum Computing", desc: "Quantum supremacy is closer than we think. Here's a look at the latest breakthroughs from IBM and Google.", tag: "Future Tech", date: "Dec 10", img: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=400&h=300&fit=crop" },
+        { author: "Verge Science", title: "AI in Healthcare: A Revolution", desc: "From diagnosing rare diseases to personalized medicine, artificial intelligence is reshaping the medical landscape.", tag: "AI", date: "Dec 9", img: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=400&h=300&fit=crop" },
+        { author: "Wired", title: "Cybersecurity in 2025", desc: "As threats evolve, so must our defenses. Zero trust architecture is becoming the new standard.", tag: "Security", date: "Dec 8", img: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=400&h=300&fit=crop" },
+    ],
+    'Design': [
+        { author: "Smashing Mag", title: "Typography Trends for 2025", desc: "Serifs are back, neon colors are out. A look at what's defining the visual language of the web next year.", tag: "Typography", date: "Dec 11", img: "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=300&fit=crop" },
+        { author: "A List Apart", title: "Accessible Color Palettes", desc: "Designing for everyone means ensuring high contrast and readable combinations for all visual abilities.", tag: "Accessibility", date: "Dec 7", img: "https://images.unsplash.com/photo-1586717791821-3f44a5638d28?w=400&h=300&fit=crop" },
+    ],
+    'Productivity': [
+        { author: "James Clear", title: "Atomic Habits for Developers", desc: "Small changes in your coding workflow can lead to massive improvements in output and code quality over time.", tag: "Habits", date: "Dec 12", img: "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=400&h=300&fit=crop" },
+        { author: "Tim Ferriss", title: "Deep Work vs. Shallow Work", desc: "How to carve out 4-hour blocks of uninterrupted time in a world of constant notifications.", tag: "Focus", date: "Dec 5", img: "https://images.unsplash.com/photo-1497032628192-86f99bcd76bc?w=400&h=300&fit=crop" },
+    ],
+};
+
+const TRENDING = [
+    { num: "01", title: "The End of Front-End Deployment?", author: "Sarah Drasner", date: "Oct 24", time: "5 min", img: "https://i.pravatar.cc/40?img=12" },
+    { num: "02", title: "Why I'm leaving Microservices", author: "DHH", date: "Oct 22", time: "8 min", img: "https://i.pravatar.cc/40?img=13" },
+    { num: "03", title: "React Server Components: A deep dive", author: "Dan Abramov", date: "Oct 20", time: "12 min", img: "https://i.pravatar.cc/40?img=14" },
+    { num: "04", title: "Understanding AI Agents", author: "Andrej Karpathy", date: "Oct 19", time: "6 min", img: "https://i.pravatar.cc/40?img=15" },
+    { num: "05", title: "CSS Container Queries are here", author: "Una Kravets", date: "Oct 18", time: "4 min", img: "https://i.pravatar.cc/40?img=16" },
+    { num: "06", title: "Mastering TypeScript Generics", author: "Matt Pocock", date: "Oct 16", time: "9 min", img: "https://i.pravatar.cc/40?img=17" },
+];
+
+const TAG_COLORS: Record<string, string> = {
+    Management: '#06b6d4', Performance: '#a855f7', React: '#3b82f6', 'Future Tech': '#f97316',
+    AI: '#ec4899', Security: '#ef4444', Typography: '#eab308', Accessibility: '#10b981', Habits: '#8b5cf6', Focus: '#14b8a6',
+};
 
 const LandingPage = () => {
-    const [activeTab, setActiveTab] = useState('For you');
-
-    const feedContent = {
-        'For you': [
-            {
-                author: "Will Larson",
-                title: "Writing an Engineering Strategy",
-                desc: "Strategies are about tradeoffs. Good strategies make those tradeoffs explicit and help teams move faster by reducing decision paralysis.",
-                tag: "Management",
-                date: "Dec 4",
-                img: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=400&h=300&fit=crop"
-            },
-            {
-                author: "Addy Osmani",
-                title: "Image Optimization in 2024",
-                desc: "New formats like AVIF, proper sizing attributes, and lazy loading strategies can cut your LCP in half.",
-                tag: "Performance",
-                date: "Dec 3",
-                img: "https://images.unsplash.com/photo-1550439062-609e1531270e?w=400&h=300&fit=crop"
-            },
-            {
-                author: "Kent C. Dodds",
-                title: "Full Stack Components",
-                desc: "The lines between client and server are blurring. Here is how to think about component composition in a RSC world.",
-                tag: "React",
-                date: "Dec 1",
-                img: "https://images.unsplash.com/photo-1633356122102-3fe601e15fae?w=400&h=300&fit=crop"
-            },
-            {
-                author: "Josh Comeau",
-                title: "Designing Beautiful Shadows",
-                desc: "Shadows add depth and hierarchy. But default browser shadows are messy. Let's create lush, realistic shadows with CSS.",
-                tag: "Design",
-                date: "Nov 28",
-                img: "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?w=400&h=300&fit=crop"
-            }
-        ],
-        'Technology': [
-            {
-                author: "Tech Crunch",
-                title: "The Rise of Quantum Computing",
-                desc: "Quantum supremacy is closer than we think. Here's a look at the latest breakthroughs from IBM and Google.",
-                tag: "Future Tech",
-                date: "Dec 10",
-                img: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=400&h=300&fit=crop"
-            },
-            {
-                author: "Verge Science",
-                title: "AI in Healthcare: A Revolution",
-                desc: "From diagnosing rare diseases to personalized medicine, artificial intelligence is reshaping the medical landscape.",
-                tag: "AI",
-                date: "Dec 9",
-                img: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=400&h=300&fit=crop"
-            },
-            {
-                author: "Wired",
-                title: "Cybersecurity in 2024",
-                desc: "As threats evolve, so must our defenses. Zero trust architecture is becoming the new standard.",
-                tag: "Security",
-                date: "Dec 8",
-                img: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=400&h=300&fit=crop"
-            }
-        ],
-        'Design': [
-            {
-                author: "Smashing Mag",
-                title: "Typography Trends for 2025",
-                desc: "Serifs are back, neon colors are out. A look at what's defining the visual language of the web next year.",
-                tag: "Typography",
-                date: "Dec 11",
-                img: "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=300&fit=crop"
-            },
-            {
-                author: "A List Apart",
-                title: "Accessible Color Palettes",
-                desc: "Designing for everyone means ensuring high contrast and readable combinations. Use these tools to verify your designs.",
-                tag: "Accessibility",
-                date: "Dec 7",
-                img: "https://images.unsplash.com/photo-1586717791821-3f44a5638d28?w=400&h=300&fit=crop"
-            },
-            {
-                author: "UX Collective",
-                title: "The Psychology of Dark Mode",
-                desc: "Why do users prefer dark interfaces? It's not just about battery life; it's about focus and visual comfort.",
-                tag: "UX",
-                date: "Dec 6",
-                img: "https://images.unsplash.com/photo-1555421689-d68471e189f2?w=400&h=300&fit=crop"
-            }
-        ],
-        'Productivity': [
-            {
-                author: "James Clear",
-                title: "Atomic Habits for Developers",
-                desc: "Small changes in your coding workflow can lead to massive improvements in output and code quality over time.",
-                tag: "Habits",
-                date: "Dec 12",
-                img: "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=400&h=300&fit=crop"
-            },
-            {
-                author: "Tim Ferriss",
-                title: "Deep Work vs. Shallow Work",
-                desc: "How to carve out 4-hour blocks of uninterrupted time in a world of constant notifications and Slack pings.",
-                tag: "Focus",
-                date: "Dec 5",
-                img: "https://images.unsplash.com/photo-1497032628192-86f99bcd76bc?w=400&h=300&fit=crop"
-            }
-        ]
-    };
+    const [activeTab, setActiveTab] = useState<Tab>('For You');
 
     return (
-        <div className="min-h-screen relative overflow-hidden bg-white font-serif text-slate-900 selection:bg-yellow-200 selection:text-black">
-            <Navbar forceWhite={true} />
+        <div style={{ minHeight: '100vh', backgroundColor: '#020617', color: '#e2e8f0', fontFamily: '"Inter", sans-serif' }}>
+            <div className="cosmic-bg">
+                <div className="cosmic-orb cosmic-orb-1" style={{ opacity: 0.08 }} />
+                <div className="cosmic-orb cosmic-orb-2" style={{ opacity: 0.06 }} />
+                <div className="grid-texture" />
+            </div>
+            
+            <Navbar forceWhite={false} />
 
-            {/* Hero Section - Modern Engineering / Linear Style */}
-            <div className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden">
-                {/* Animated Gradient Mesh Background */}
-                <div className="absolute inset-0 gradient-mesh-subtle" />
+            {/* ─── HERO ─── */}
+            <div style={{ position: 'relative', paddingTop: '10rem', paddingBottom: '6rem', overflow: 'hidden', zIndex: 10 }}>
+                <div style={{ maxWidth: '900px', margin: '0 auto', padding: '0 1.5rem', textAlign: 'center' }}>
+                    <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
+                        {/* Badge */}
+                        <div style={{
+                            display: 'inline-flex', alignItems: 'center', gap: '0.5rem', marginBottom: '2rem',
+                            background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)',
+                            borderRadius: '999px', padding: '0.375rem 1rem',
+                            fontSize: '0.8rem', color: '#a5b4fc', fontWeight: 700, letterSpacing: '0.05em'
+                        }}>
+                            ✦ The Knowledge Platform for Engineering Teams
+                        </div>
 
-                {/* Floating Orbs */}
-                <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                    <div className="absolute top-20 right-0 w-[600px] h-[600px] bg-gradient-to-br from-blue-400/20 to-violet-500/20 rounded-full blur-[140px] animate-float" />
-                    <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-gradient-to-br from-indigo-400/20 to-purple-500/20 rounded-full blur-[140px] animate-float" style={{ animationDelay: '3s' }} />
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gradient-to-br from-cyan-400/15 to-pink-500/15 rounded-full blur-[120px] animate-float" style={{ animationDelay: '6s' }} />
-                </div>
-
-                {/* Technical Grid Background */}
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px]" />
-
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6 }}
-                        className="max-w-4xl mx-auto space-y-8"
-                    >
-                        {/* Pill Badge */}
-
-
-                        <h1 className="text-6xl md:text-8xl font-sans font-extrabold tracking-tight leading-tight animate-fade-in-scale">
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900">Knowledge </span>
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-violet-600 to-indigo-600 animate-shimmer">
-                                Evolved.
-                            </span>
+                        <h1 style={{
+                            fontSize: 'clamp(3rem, 8vw, 6rem)', fontWeight: 900,
+                            lineHeight: 1.05, letterSpacing: '-0.04em', marginBottom: '1.5rem',
+                            fontFamily: '"Space Grotesk", sans-serif'
+                        }}>
+                            Knowledge{' '}
+                            <span style={{
+                                background: 'linear-gradient(135deg, #67e8f9 0%, #a5b4fc 50%, #f9a8d4 100%)',
+                                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                                backgroundSize: '200% auto', animation: 'gradient-flow 4s ease infinite'
+                            }}>Evolved.</span>
                         </h1>
 
-                        <p className="text-xl md:text-2xl text-slate-600 font-sans font-normal leading-relaxed max-w-2xl mx-auto">
+                        <p style={{ fontSize: '1.15rem', color: '#475569', maxWidth: '540px', margin: '0 auto 2.5rem', lineHeight: 1.7 }}>
                             The collaborative platform where engineering teams share context, document decisions, and scale their culture.
                         </p>
 
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-                            <Link to="/signup" className="w-full sm:w-auto px-8 py-4 rounded-xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white text-lg font-sans font-bold hover:shadow-2xl hover:shadow-slate-500/30 hover:-translate-y-1 active:scale-95 transition-all relative overflow-hidden group">
-                                <span className="relative z-10">Start for free</span>
-                                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-violet-600 to-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                            <Link to="/signup" className="btn-primary" style={{ padding: '0.875rem 2rem', fontSize: '1rem', borderRadius: '1rem' }}>
+                                <span>Start for free →</span>
+                            </Link>
+                            <Link to="/login" className="btn-secondary" style={{ padding: '0.875rem 2rem', fontSize: '1rem', borderRadius: '1rem' }}>
+                                Sign In
                             </Link>
                         </div>
                     </motion.div>
-
-
                 </div>
             </div>
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16">
-                {/* Trending Section */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    className="mb-16"
-                >
-                    <div className="flex items-center gap-3 mb-6 font-sans text-xs font-bold uppercase tracking-widest text-slate-700">
-                        <span className="p-1 rounded-full border border-slate-700">
-                            <ArrowTrendingUpIcon className="w-4 h-4" />
-                        </span>
-                        Trending on Knowledge
+            {/* ─── MAIN CONTENT ─── */}
+            <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1.5rem 6rem', position: 'relative', zIndex: 10 }}>
+
+                {/* Trending section */}
+                <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} style={{ marginBottom: '4rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                        <div style={{ width: 32, height: 32, borderRadius: '8px', background: 'rgba(6,182,212,0.1)', border: '1px solid rgba(6,182,212,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem' }}>📈</div>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#06b6d4' }}>Trending on Knowledge</span>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-10 border-b border-slate-200 pb-16">
-                        {[
-                            { num: "01", title: "The End of Front-End Deployment?", author: "Sarah Drasner", date: "Oct 24", time: "5 min read", img: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=100&h=100&fit=crop" },
-                            { num: "02", title: "Why I'm leaving Microservices", author: "DHH", date: "Oct 22", time: "8 min read", img: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop" },
-                            { num: "03", title: "React Server Components: A deep dive", author: "Dan Abramov", date: "Oct 20", time: "12 min read", img: "https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=100&h=100&fit=crop" },
-                            { num: "04", title: "Understanding AI Agents", author: "Andrej Karpathy", date: "Oct 19", time: "6 min read", img: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&h=100&fit=crop" },
-                            { num: "05", title: "CSS Container Queries are here", author: "Una Kravets", date: "Oct 18", time: "4 min read", img: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop" },
-                            { num: "06", title: "Mastering TypeScript Generics", author: "Matt Pocock", date: "Oct 16", time: "9 min read", img: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop" },
-                        ].map((item) => (
-                            <div key={item.num} className="flex gap-4 items-start group cursor-pointer">
-                                <span className="text-3xl font-bold text-slate-200 font-sans -mt-2 selection:bg-transparent">{item.num}</span>
-                                <div className="space-y-2">
-                                    <div className="flex items-center gap-2 text-xs font-bold font-sans text-slate-700">
-                                        <img src={item.img} className="w-5 h-5 rounded-full object-cover" alt={item.author} />
-                                        {item.author}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: '1rem' }}>
+                        {TRENDING.map(item => (
+                            <div key={item.num} style={{
+                                display: 'flex', gap: '1rem', alignItems: 'flex-start',
+                                padding: '1rem', borderRadius: '1rem', cursor: 'pointer',
+                                background: 'rgba(15,23,42,0.5)', border: '1px solid rgba(100,160,255,0.08)',
+                                transition: 'all 0.2s ease'
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(6,182,212,0.2)'; e.currentTarget.style.background = 'rgba(22,33,62,0.7)'; }}
+                            onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(100,160,255,0.08)'; e.currentTarget.style.background = 'rgba(15,23,42,0.5)'; }}>
+                                <span style={{ fontSize: '2rem', fontWeight: 900, color: 'rgba(100,116,139,0.3)', lineHeight: 1, flexShrink: 0, fontFamily: '"Space Grotesk", sans-serif' }}>{item.num}</span>
+                                <div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.375rem' }}>
+                                        <img src={item.img} style={{ width: 18, height: 18, borderRadius: '50%', objectFit: 'cover' }} />
+                                        <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#475569' }}>{item.author}</span>
                                     </div>
-                                    <h3 className="text-base font-bold font-sans text-slate-900 leading-snug group-hover:underline decoration-slate-900 decoration-1 underline-offset-2">
-                                        {item.title}
-                                    </h3>
-                                    <div className="text-xs text-slate-500 font-sans">
-                                        {item.date} · {item.time}
-                                    </div>
+                                    <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#cbd5e1', lineHeight: 1.35, margin: '0 0 0.25rem' }}>{item.title}</h3>
+                                    <span style={{ fontSize: '0.725rem', color: '#334155' }}>{item.date} · {item.time} read</span>
                                 </div>
                             </div>
                         ))}
                     </div>
+
+                    <div style={{ height: 1, background: 'linear-gradient(to right, transparent, rgba(100,160,255,0.15), transparent)', marginTop: '2.5rem' }} />
                 </motion.div>
 
-                {/* Main Content Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-16 pb-24">
-                    {/* Left Feed - Professional Articles */}
-                    <div className="space-y-12">
-                        {/* Tabs Navigation */}
-                        <div className="border-b border-slate-200 flex gap-8 mb-8 overflow-x-auto no-scrollbar">
-                            {Object.keys(feedContent).map(tab => (
-                                <button
-                                    key={tab}
-                                    onClick={() => setActiveTab(tab)}
-                                    className={`pb-4 text-sm font-bold font-sans uppercase tracking-widest transition-colors border-b-2 whitespace-nowrap ${activeTab === tab
-                                        ? 'border-slate-900 text-slate-900'
-                                        : 'border-transparent text-slate-400 hover:text-slate-600'
-                                        }`}
-                                >
+                {/* Main grid */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '4rem', alignItems: 'start' }}>
+
+                    {/* Left Feed */}
+                    <div>
+                        {/* Tab bar */}
+                        <div style={{
+                            display: 'flex', gap: '0.25rem', marginBottom: '2.5rem',
+                            background: 'rgba(15,23,42,0.5)', border: '1px solid rgba(100,160,255,0.08)',
+                            borderRadius: '0.875rem', padding: '0.375rem'
+                        }}>
+                            {TABS.map(tab => (
+                                <button key={tab} onClick={() => setActiveTab(tab)} style={{
+                                    flex: 1, padding: '0.625rem 0.75rem', borderRadius: '0.625rem',
+                                    border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem',
+                                    transition: 'all 0.2s ease',
+                                    background: activeTab === tab ? 'rgba(6,182,212,0.12)' : 'transparent',
+                                    color: activeTab === tab ? '#06b6d4' : '#475569',
+                                    borderBottom: activeTab === tab ? '2px solid #06b6d4' : '2px solid transparent'
+                                }}>
                                     {tab}
                                 </button>
                             ))}
                         </div>
 
-                        {/* Featured Article - Dynamic based on tab? Or keep static featured and just switch list? 
-                            Let's keep the main Editor's Choice as a "Global" feature for now, or randomize it. 
-                            I'll leave the editor's choice as static to anchor the page, and the tabs control the feed below.
-                         */}
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            className="group cursor-pointer mb-16"
+                        {/* Featured article */}
+                        <motion.div style={{ marginBottom: '3rem', cursor: 'pointer' }}
+                            whileHover={{ y: -2 }}
+                            className="glass-card"
                         >
-                            <div className="w-full aspect-[16/9] bg-slate-100 rounded-lg overflow-hidden mb-6 relative">
-                                <img
-                                    src="https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1200&q=80"
-                                    className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
-                                    alt="Featured"
-                                />
-                                <div className="absolute top-4 left-4 bg-slate-900 text-white text-xs font-sans font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-                                    Editor's Choice
+                            <div style={{ padding: '1.5rem' }}>
+                                <div style={{ aspectRatio: '16/9', borderRadius: '0.875rem', overflow: 'hidden', marginBottom: '1.25rem', position: 'relative' }}>
+                                    <img src="https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1200&q=80"
+                                        style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s ease' }}
+                                        onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
+                                        onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'} />
+                                    <div style={{
+                                        position: 'absolute', top: '0.875rem', left: '0.875rem',
+                                        background: 'rgba(6,182,212,0.85)', backdropFilter: 'blur(8px)',
+                                        color: '#fff', fontSize: '0.7rem', fontWeight: 800,
+                                        padding: '0.25rem 0.75rem', borderRadius: '999px',
+                                        letterSpacing: '0.08em', textTransform: 'uppercase'
+                                    }}>Editor's Choice</div>
                                 </div>
-                            </div>
-                            <div className="space-y-3">
-                                <div className="flex items-center gap-2 text-sm font-sans font-medium text-slate-700">
-                                    <div className="w-6 h-6 rounded-full bg-slate-200 bg-cover bg-center" style={{ backgroundImage: 'url(https://i.pravatar.cc/100?img=12)' }}></div>
-                                    <span>Elena Fisher</span>
-                                    <span className="text-slate-400">·</span>
-                                    <span>Dec 12</span>
+
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.75rem' }}>
+                                    <img src="https://i.pravatar.cc/40?img=12" style={{ width: 24, height: 24, borderRadius: '50%' }} />
+                                    <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>Elena Fisher</span>
+                                    <span style={{ color: '#1e293b' }}>·</span>
+                                    <span style={{ fontSize: '0.8rem', color: '#334155' }}>Dec 12</span>
                                 </div>
-                                <h3 className="text-3xl md:text-4xl font-bold font-serif text-slate-900 leading-tight group-hover:text-cyan-700 transition-colors">
+                                <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#e2e8f0', lineHeight: 1.25, marginBottom: '0.75rem', letterSpacing: '-0.02em', fontFamily: '"Space Grotesk", sans-serif' }}>
                                     The Future of Distributed Systems: Beyond Microservices
                                 </h3>
-                                <p className="font-serif text-lg text-slate-600 leading-relaxed max-w-2xl">
-                                    As infrastructure complexity grows, we need to rethink our approach to modularity. It's not just about splitting services anymore; it's about intelligent orchestration and data locality.
+                                <p style={{ color: '#475569', lineHeight: 1.7, marginBottom: '1rem' }}>
+                                    As infrastructure complexity grows, we need to rethink our approach to modularity. It's not just about splitting services anymore...
                                 </p>
-                                <div className="pt-2 flex flex-wrap gap-2">
+                                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                                     {['Architecture', 'Backend', 'System Design'].map(tag => (
-                                        <span key={tag} className="text-xs font-sans border border-slate-200 px-2 py-1 rounded text-slate-500 hover:border-slate-400 hover:text-slate-700 transition-colors">{tag}</span>
+                                        <span key={tag} className="tag-chip">{tag}</span>
                                     ))}
                                 </div>
                             </div>
                         </motion.div>
 
-                        {/* Article List - Dynamic */}
+                        {/* Article list */}
                         <AnimatePresence mode="wait">
-                            <motion.div
-                                key={activeTab}
-                                initial={{ opacity: 0, y: 20 }}
+                            <motion.div key={activeTab}
+                                initial={{ opacity: 0, y: 16 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
+                                exit={{ opacity: 0, y: -16 }}
                                 transition={{ duration: 0.3 }}
-                                className="space-y-12"
+                                style={{ display: 'flex', flexDirection: 'column', gap: '0' }}
                             >
-                                {feedContent[activeTab as keyof typeof feedContent].map((post, i) => (
-                                    <div
-                                        key={i}
-                                        className="flex flex-col md:flex-row gap-8 items-start justify-between cursor-pointer group border-b border-slate-100 pb-12 last:border-0"
-                                    >
-                                        <div className="space-y-3 flex-1">
-                                            <div className="flex items-center gap-2 text-xs font-sans font-medium text-slate-700">
-                                                <div className="w-6 h-6 rounded-full bg-slate-200 bg-center bg-cover" style={{ backgroundImage: `url(https://i.pravatar.cc/100?img=${i + 10 + (Object.keys(feedContent).indexOf(activeTab) * 5)})` }}></div>
-                                                {post.author}
+                                {FEED_CONTENT[activeTab].map((post, i) => (
+                                    <div key={i} style={{
+                                        display: 'flex', gap: '1.5rem', alignItems: 'flex-start',
+                                        padding: '1.5rem 0', cursor: 'pointer',
+                                        borderBottom: '1px solid rgba(100,160,255,0.08)'
+                                    }}
+                                    className="article-row">
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.625rem' }}>
+                                                <img src={`https://i.pravatar.cc/40?img=${i + 20}`} style={{ width: 22, height: 22, borderRadius: '50%' }} />
+                                                <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748b' }}>{post.author}</span>
                                             </div>
-                                            <h2 className="text-xl md:text-2xl font-bold font-sans text-slate-900 leading-tight group-hover:text-cyan-700 transition-colors">
+                                            <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#e2e8f0', lineHeight: 1.3, marginBottom: '0.5rem', letterSpacing: '-0.01em', fontFamily: '"Space Grotesk", sans-serif', transition: 'color 0.2s ease' }}
+                                                onMouseEnter={e => e.currentTarget.style.color = '#67e8f9'}
+                                                onMouseLeave={e => e.currentTarget.style.color = '#e2e8f0'}>
                                                 {post.title}
                                             </h2>
-                                            <p className="font-serif text-slate-500 line-clamp-3 leading-relaxed text-base md:text-[1.05rem]">
-                                                {post.desc}
-                                            </p>
-                                            <div className="flex items-center gap-4 text-xs font-sans text-slate-500 pt-3">
-                                                <span className="bg-slate-50 px-3 py-1 rounded text-slate-600 font-medium hover:bg-slate-200 transition-colors">{post.tag}</span>
-                                                <span>4 min read</span>
-                                                <span>·</span>
-                                                <span>{post.date}</span>
-                                                <div className="ml-auto flex gap-3">
-                                                    <BookmarkIcon className="w-5 h-5 text-slate-400 hover:text-slate-900 transition-colors" />
-                                                    <SparklesIcon className="w-5 h-5 text-slate-400 hover:text-yellow-600 transition-colors" />
+                                            <p style={{ color: '#334155', fontSize: '0.875rem', lineHeight: 1.6, marginBottom: '0.75rem' }}>{post.desc}</p>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
+                                                <span style={{
+                                                    fontSize: '0.725rem', fontWeight: 700, padding: '0.2rem 0.625rem',
+                                                    borderRadius: '999px', letterSpacing: '0.05em',
+                                                    background: `rgba(${post.tag in TAG_COLORS ? '6,182,212' : '100,116,139'},0.1)`,
+                                                    color: TAG_COLORS[post.tag] || '#64748b',
+                                                    border: `1px solid rgba(${post.tag in TAG_COLORS ? '6,182,212' : '100,116,139'},0.15)`
+                                                }}>{post.tag}</span>
+                                                <span style={{ color: '#1e293b', fontSize: '0.8rem' }}>4 min read</span>
+                                                <span style={{ color: '#1e293b', fontSize: '0.8rem' }}>· {post.date}</span>
+                                                <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.875rem' }}>
+                                                    {/* Bookmark icon */}
+                                                    <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1e293b', padding: '0.25rem', transition: 'color 0.2s' }}
+                                                        onMouseEnter={e => e.currentTarget.style.color = '#06b6d4'}
+                                                        onMouseLeave={e => e.currentTarget.style.color = '#1e293b'}>
+                                                        <svg style={{ width: 18, height: 18 }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
+                                                    </button>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div className="w-full md:w-32 lg:w-40 aspect-[4/3] bg-slate-100 flex-shrink-0 rounded-sm overflow-hidden">
-                                            <img
-                                                src={post.img}
-                                                className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
-                                                alt={post.title}
-                                            />
+                                        <div style={{ width: 120, height: 80, flexShrink: 0, borderRadius: '0.75rem', overflow: 'hidden', border: '1px solid rgba(100,160,255,0.08)' }}>
+                                            <img src={post.img} style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.4s ease' }}
+                                                onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
+                                                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'} />
                                         </div>
                                     </div>
                                 ))}
@@ -324,46 +256,67 @@ const LandingPage = () => {
                         </AnimatePresence>
                     </div>
 
-                    {/* Right Sidebar (Sticky) */}
-                    <div className="hidden lg:block">
-                        <div className="sticky top-28 space-y-12">
-                            <div>
-                                <h4 className="text-sm font-bold font-sans text-slate-900 uppercase tracking-widest mb-4">Discover more</h4>
-                                <div className="flex flex-wrap gap-2 text-sm font-sans">
-                                    {['Programming', 'Data Science', 'Technology', 'Self Improvement', 'Writing', 'Machine Learning', 'Productivity', 'Politics', 'Crypto'].map(tag => (
-                                        <Link key={tag} to={`/search?q=${tag}`} className="px-4 py-2 border border-slate-200 rounded-sm text-slate-600 hover:text-slate-900 hover:border-slate-900 transition-colors bg-white">
-                                            {tag}
-                                        </Link>
-                                    ))}
-                                </div>
-                                <Link to="/tags" className="text-sm font-sans text-green-600 hover:text-green-700 mt-4 inline-block font-medium">See all topics</Link>
+                    {/* Right Sidebar */}
+                    <div style={{ position: 'sticky', top: '5rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                        {/* Discover topics */}
+                        <div className="glass-card" style={{ padding: '1.5rem' }}>
+                            <h4 style={{ fontSize: '0.75rem', fontWeight: 800, color: '#06b6d4', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>
+                                Discover Topics
+                            </h4>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                {['JavaScript', 'React', 'Python', 'AI', 'DevOps', 'System Design', 'Career', 'Design', 'Go', 'Rust'].map(tag => (
+                                    <Link key={tag} to={`/search?q=${tag}`}
+                                        style={{ textDecoration: 'none' }}
+                                        className="tag-chip">
+                                        {tag}
+                                    </Link>
+                                ))}
                             </div>
+                        </div>
 
-                            <div className="border-t border-slate-100 pt-8">
-                                <h4 className="text-sm font-bold font-sans text-slate-900 uppercase tracking-widest mb-4">Recommended Users</h4>
-                                <div className="space-y-5">
-                                    {[1, 2, 3].map(i => (
-                                        <div key={i} className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-slate-200 flex-shrink-0 bg-cover bg-center" style={{ backgroundImage: `url(https://i.pravatar.cc/100?img=${i + 40})` }}></div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="text-sm font-bold font-sans text-slate-900 truncate">Engineering Team</div>
-                                                <p className="text-xs font-serif text-slate-500 line-clamp-1">Sharing the best practices for scaling...</p>
+                        {/* Recommended users */}
+                        <div className="glass-card" style={{ padding: '1.5rem' }}>
+                            <h4 style={{ fontSize: '0.75rem', fontWeight: 800, color: '#06b6d4', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1.25rem' }}>
+                                Top Contributors
+                            </h4>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                {[1, 2, 3].map(i => (
+                                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
+                                        <img src={`https://i.pravatar.cc/64?img=${i + 40}`}
+                                            style={{ width: 40, height: 40, borderRadius: '50%', border: '2px solid rgba(6,182,212,0.2)', flexShrink: 0 }} />
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ fontWeight: 700, color: '#e2e8f0', fontSize: '0.875rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                {['Alex Chen', 'Priya Sharma', 'Marcus Webb'][i-1]}
                                             </div>
-                                            <button className="text-xs border border-slate-900 rounded-full px-3 py-1.5 font-sans font-medium hover:bg-black hover:text-white transition-all">Follow</button>
+                                            <p style={{ fontSize: '0.75rem', color: '#334155', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                {['AI & ML · 248 followers', 'Frontend Dev · 512 followers', 'DevOps · 189 followers'][i-1]}
+                                            </p>
                                         </div>
-                                    ))}
-                                </div>
+                                        <button style={{
+                                            padding: '0.3rem 0.75rem', borderRadius: '999px',
+                                            border: '1px solid rgba(6,182,212,0.25)',
+                                            background: 'rgba(6,182,212,0.08)', color: '#06b6d4',
+                                            fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
+                                            transition: 'all 0.2s ease', flexShrink: 0
+                                        }}
+                                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(6,182,212,0.2)'; }}
+                                        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(6,182,212,0.08)'; }}>
+                                            Follow
+                                        </button>
+                                    </div>
+                                ))}
                             </div>
+                        </div>
 
-                            <div className="text-xs font-sans text-slate-400 border-t border-slate-100 pt-8 leading-loose">
-                                <Link to="#" className="hover:text-slate-600 text-slate-500 mr-4">Help</Link>
-                                <Link to="#" className="hover:text-slate-600 text-slate-500 mr-4">Status</Link>
-                                <Link to="#" className="hover:text-slate-600 text-slate-500 mr-4">Writers</Link>
-                                <Link to="#" className="hover:text-slate-600 text-slate-500 mr-4">Blog</Link>
-                                <Link to="#" className="hover:text-slate-600 text-slate-500 mr-4">Careers</Link>
-                                <Link to="#" className="hover:text-slate-600 text-slate-500 mr-4">Privacy</Link>
-                                <Link to="#" className="hover:text-slate-600 text-slate-500">Terms</Link>
-                            </div>
+                        {/* Footer links */}
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
+                            {['Help', 'Status', 'Writers', 'Blog', 'Privacy', 'Terms'].map(link => (
+                                <a key={link} href="#" style={{ fontSize: '0.75rem', color: '#1e293b', textDecoration: 'none', transition: 'color 0.2s' }}
+                                    onMouseEnter={e => e.currentTarget.style.color = '#06b6d4'}
+                                    onMouseLeave={e => e.currentTarget.style.color = '#1e293b'}>
+                                    {link}
+                                </a>
+                            ))}
                         </div>
                     </div>
                 </div>

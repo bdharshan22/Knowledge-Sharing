@@ -1,9 +1,8 @@
 import { useState, useEffect, useContext } from 'react';
 import api from '../services/api';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from '../components/AppNavbar';
 import { AuthContext } from '../context/AuthContext';
-import { CalendarIcon, VideoCameraIcon } from '@heroicons/react/24/outline';
 
 interface Event {
     _id: string;
@@ -12,169 +11,163 @@ interface Event {
     date: string;
     link: string;
     type: string;
-    host: {
-        name: string;
-        avatar: string;
-    };
+    host: { name: string; avatar: string };
     attendees: string[];
 }
+
+const C = { bg: '#f8fafc', card: '#ffffff', border: '#e2e8f0', t1: '#0f172a', t2: '#475569', t3: '#94a3b8', accent: '#6366f1' };
+
+const TYPE_COLOR: Record<string, { bg: string; text: string }> = {
+    Workshop:  { bg: '#eff6ff', text: '#1d4ed8' },
+    Webinar:   { bg: '#faf5ff', text: '#7e22ce' },
+    Hackathon: { bg: '#fff7ed', text: '#c2410c' },
+    Talk:      { bg: '#f0fdf4', text: '#166534' },
+    AMA:       { bg: '#fdf2f8', text: '#9d174d' },
+};
 
 const Events = () => {
     const auth = useContext(AuthContext);
     const user = auth?.user;
-
     const [events, setEvents] = useState<Event[]>([]);
     const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        fetchEvents();
-    }, []);
+    const [filter, setFilter] = useState('All');
+    const [registering, setRegistering] = useState<string | null>(null);
 
     const fetchEvents = async () => {
         try {
             const res = await api.get('/events');
-            if (Array.isArray(res.data)) {
-                setEvents(res.data);
-            } else {
-                console.error("API returned non-array:", res.data);
-            }
-            setLoading(false);
-        } catch (err) {
-            console.error(err);
-            setLoading(false);
-        }
+            setEvents(Array.isArray(res.data) ? res.data : []);
+        } catch (err) { console.error(err); }
+        finally { setLoading(false); }
     };
 
-    const handleRegister = async (eventId: string, isRegistered: boolean) => {
+    useEffect(() => { fetchEvents(); }, []);
+
+    const handleRegister = async (id: string, isReg: boolean) => {
         if (!user) return alert('Please login to register');
+        setRegistering(id);
         try {
-            const method = isRegistered ? 'delete' : 'post';
-            await api({
-                method,
-                url: `/events/${eventId}/register`,
-            });
+            await api({ method: isReg ? 'delete' : 'post', url: `/events/${id}/register` });
             fetchEvents();
-        } catch (err) {
-            console.error(err);
-        }
+        } catch (err) { console.error(err); }
+        finally { setRegistering(null); }
     };
+
+    const types = ['All', ...Array.from(new Set(events.map(e => e.type).filter(Boolean)))];
+    const now = new Date();
+    const upcoming = events.filter(e => new Date(e.date) > now).length;
+    const filtered = filter === 'All' ? events : events.filter(e => e.type === filter);
 
     return (
-        <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-indigo-200 selection:text-slate-900">
-            <Navbar forceWhite={true} />
+        <div style={{ minHeight: '100vh', background: C.bg, fontFamily: '"Inter", sans-serif' }}>
+            <Navbar />
+            <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 3, background: 'linear-gradient(to right, #6366f1, #06b6d4, #10b981)', zIndex: 99 }} />
 
             {/* Hero */}
-            <div className="relative pt-24 pb-16 px-6 overflow-hidden">
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-gradient-to-r from-blue-100 to-indigo-100 blur-[120px] opacity-60 rounded-full pointer-events-none"></div>
-                <div className="max-w-4xl mx-auto text-center relative z-10">
-                    <motion.span
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="inline-block py-1 px-3 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold tracking-widest uppercase mb-4"
-                    >
-                        Community Events
-                    </motion.span>
-                    <motion.h1
-                        initial={{ opacity: 0, y: 30 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="text-5xl md:text-7xl font-bold tracking-tighter mb-6 text-slate-900"
-                    >
-                        Connect. Learn. <br />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-cyan-600">Grow Together.</span>
-                    </motion.h1>
+            <div style={{ background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)', padding: '7rem 1.5rem 3.5rem', textAlign: 'center', borderBottom: `1px solid ${C.border}` }}>
+                <p style={{ fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: C.accent, marginBottom: '0.5rem' }}>Community Events</p>
+                <h1 style={{ fontSize: 'clamp(2rem, 5vw, 3.25rem)', fontWeight: 900, color: C.t1, letterSpacing: '-0.03em', fontFamily: '"Space Grotesk", sans-serif', marginBottom: '1rem' }}>
+                    Connect. Learn. <span style={{ background: 'linear-gradient(135deg, #6366f1, #06b6d4)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Grow Together.</span> 📅
+                </h1>
+                <p style={{ color: C.t2, fontSize: '1.05rem', maxWidth: 480, margin: '0 auto 2rem', lineHeight: 1.7 }}>
+                    Live workshops, AMA sessions, and hackathons hosted by our expert community.
+                </p>
+                {/* Stat chips */}
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
+                    {[
+                        { label: 'Total Events', value: events.length, icon: '📅', color: C.accent },
+                        { label: 'Upcoming', value: upcoming, icon: '🔜', color: '#10b981' },
+                        { label: 'Total Attendees', value: events.reduce((s, e) => s + e.attendees.length, 0), icon: '👥', color: '#6366f1' },
+                    ].map(s => (
+                        <div key={s.label} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: '0.875rem', padding: '0.875rem 1.5rem', textAlign: 'center' }}>
+                            <div style={{ fontSize: '1.4rem', fontWeight: 900, color: s.color, fontFamily: '"Space Grotesk", sans-serif' }}>{s.icon} {s.value}</div>
+                            <div style={{ fontSize: '0.72rem', color: C.t3, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: '0.15rem' }}>{s.label}</div>
+                        </div>
+                    ))}
+                </div>
+                {/* Type filter */}
+                <div style={{ display: 'inline-flex', gap: '0.3rem', background: C.card, border: `1px solid ${C.border}`, borderRadius: '0.875rem', padding: '0.375rem' }}>
+                    {types.map(t => (
+                        <button key={t} onClick={() => setFilter(t)} style={{ padding: '0.4rem 1rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem', transition: 'all 0.2s', background: filter === t ? C.accent : 'transparent', color: filter === t ? '#fff' : C.t2 }}>{t}</button>
+                    ))}
                 </div>
             </div>
 
             {/* Events List */}
-            <div className="max-w-5xl mx-auto px-6 pb-24">
+            <div style={{ maxWidth: 860, margin: '0 auto', padding: '2.5rem 1.5rem' }}>
                 {loading ? (
-                    <div className="text-center py-20 text-gray-500">Loading events...</div>
+                    [1,2,3].map(i => <div key={i} style={{ background: C.card, borderRadius: '1rem', height: 140, marginBottom: '1rem', animation: 'pulse 1.5s infinite', border: `1px solid ${C.border}` }} />)
+                ) : filtered.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '5rem 2rem', background: C.card, borderRadius: '1.25rem', border: `1px solid ${C.border}` }}>
+                        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📭</div>
+                        <h3 style={{ color: C.t1, fontWeight: 700 }}>No events found</h3>
+                        <p style={{ color: C.t2, fontSize: '0.9rem', marginTop: '0.5rem' }}>Check back soon — events are added regularly.</p>
+                    </div>
                 ) : (
-                    <div className="space-y-6">
-                        {events.length > 0 ? events.map((event, index) => {
-                            const isRegistered = user && event.attendees.includes(user._id);
-                            const eventDate = new Date(event.date);
-                            const isLive = new Date() >= eventDate && new Date() <= new Date(eventDate.getTime() + 2 * 60 * 60 * 1000); // Mock "Live" if within 2 hours
-
+                    <AnimatePresence>
+                        {filtered.map((event, i) => {
+                            const isReg = !!user && event.attendees.includes(user._id);
+                            const eDate = new Date(event.date);
+                            const isPast = eDate < now;
+                            const isLive = !isPast && eDate.getTime() - now.getTime() < 2 * 3600 * 1000;
+                            const tc = TYPE_COLOR[event.type] || { bg: '#f1f5f9', text: '#475569' };
                             return (
-                                <motion.div
-                                    key={event._id}
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: index * 0.1 }}
-                                    className="group bg-white border border-slate-200 rounded-2xl p-6 md:p-8 hover:border-indigo-300/60 transition-colors flex flex-col md:flex-row gap-8 items-start relative overflow-hidden shadow-sm"
-                                >
-                                    {/* Date Column */}
-                                    <div className="flex-shrink-0 flex flex-col items-center justify-center w-20 h-20 bg-slate-100 rounded-xl border border-slate-200">
-                                        <span className="text-xs font-bold uppercase text-slate-500">{eventDate.toLocaleString('default', { month: 'short' })}</span>
-                                        <span className="text-3xl font-bold text-slate-900">{eventDate.getDate()}</span>
+                                <motion.div key={event._id} layout initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ delay: i * 0.05 }}
+                                    style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: '1rem', padding: '1.5rem', marginBottom: '1rem', display: 'flex', gap: '1.5rem', alignItems: 'flex-start', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', position: 'relative', overflow: 'hidden' }}>
+                                    {/* Status strip */}
+                                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: isPast ? '#e2e8f0' : isLive ? '#ef4444' : 'linear-gradient(to right, #6366f1, #06b6d4)' }} />
+
+                                    {/* Date box */}
+                                    <div style={{ flexShrink: 0, width: 64, height: 64, borderRadius: '0.875rem', background: isPast ? C.bg : 'linear-gradient(135deg, #6366f1, #4f46e5)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: `1px solid ${isPast ? C.border : 'transparent'}` }}>
+                                        <span style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', color: isPast ? C.t3 : 'rgba(255,255,255,0.8)', letterSpacing: '0.08em' }}>{eDate.toLocaleString('default', { month: 'short' })}</span>
+                                        <span style={{ fontSize: '1.5rem', fontWeight: 900, color: isPast ? C.t2 : '#fff', lineHeight: 1.1 }}>{eDate.getDate()}</span>
                                     </div>
 
                                     {/* Content */}
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-3 mb-2">
-                                            {isLive && (
-                                                <span className="flex items-center gap-1 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse">
-                                                    <span className="w-1.5 h-1.5 bg-white rounded-full"></span> LIVE
-                                                </span>
-                                            )}
-                                            <span className="text-indigo-600 text-xs font-bold uppercase tracking-wide">{event.type}</span>
-                                            <span className="text-slate-500 text-xs flex items-center gap-1">
-                                                <CalendarIcon className="w-3 h-3" />
-                                                {eventDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
+                                            {isLive && <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', background: '#ef4444', color: '#fff', fontSize: '0.65rem', fontWeight: 800, padding: '0.15rem 0.5rem', borderRadius: '999px', animation: 'pulse 1.5s infinite' }}>● LIVE</span>}
+                                            {isPast && <span style={{ fontSize: '0.68rem', fontWeight: 700, padding: '0.15rem 0.5rem', borderRadius: '999px', background: '#f1f5f9', color: C.t3 }}>Past</span>}
+                                            <span style={{ fontSize: '0.68rem', fontWeight: 700, padding: '0.2rem 0.6rem', borderRadius: '999px', background: tc.bg, color: tc.text }}>{event.type}</span>
+                                            <span style={{ fontSize: '0.78rem', color: C.t3, fontWeight: 500 }}>
+                                                {eDate.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })} · {eDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </span>
                                         </div>
-
-                                        <h3 className="text-2xl font-bold mb-3 group-hover:text-indigo-600 transition-colors">{event.title}</h3>
-                                        <p className="text-slate-600 text-sm leading-relaxed mb-6 max-w-2xl">
-                                            {event.description}
-                                        </p>
-
-                                        <div className="flex items-center gap-6 text-sm text-slate-500 font-medium">
-                                            <div className="flex items-center gap-2">
-                                                <img src={event.host?.avatar || `https://ui-avatars.com/api/?name=${event.host?.name || 'Anonymous'}`} alt="" className="w-6 h-6 rounded-full ring-2 ring-slate-200" />
-                                                <span className="text-slate-700">By {event.host?.name || 'Anonymous'}</span>
-                                            </div>
-                                            <div className="flex items-center gap-1">
-                                                <VideoCameraIcon className="w-4 h-4" />
-                                                Virtual
-                                            </div>
-                                            <div>
-                                                {event.attendees.length} attending
-                                            </div>
+                                        <h3 style={{ fontWeight: 800, color: C.t1, fontSize: '1.1rem', marginBottom: '0.5rem', fontFamily: '"Space Grotesk", sans-serif' }}>{event.title}</h3>
+                                        <p style={{ color: C.t2, fontSize: '0.875rem', lineHeight: 1.65, marginBottom: '1rem', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{event.description}</p>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', fontSize: '0.8rem', color: C.t3, fontWeight: 600 }}>
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                                                <img src={event.host?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(event.host?.name || 'Host')}&background=e2e8f0&color=475569&bold=true`}
+                                                    style={{ width: 20, height: 20, borderRadius: '50%', border: `1px solid ${C.border}` }} />
+                                                {event.host?.name || 'Anonymous'}
+                                            </span>
+                                            <span>📍 Virtual</span>
+                                            <span>👥 {event.attendees.length} attending</span>
                                         </div>
                                     </div>
 
                                     {/* Action */}
-                                    <div className="flex flex-col items-end gap-3 min-w-[150px] mt-4 md:mt-0">
-                                        {isRegistered ? (
-                                            <button
-                                                onClick={() => handleRegister(event._id, true)}
-                                                className="w-full bg-green-50 text-green-700 border border-green-200 py-2.5 rounded-lg font-bold text-sm hover:bg-green-100 transition-colors"
-                                            >
-                                                Registered
+                                    <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                        {!isPast && (
+                                            <button onClick={() => handleRegister(event._id, isReg)} disabled={registering === event._id} style={{
+                                                padding: '0.6rem 1.25rem', borderRadius: '0.625rem', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', border: 'none', minWidth: 120, transition: 'all 0.2s', opacity: registering === event._id ? 0.7 : 1,
+                                                background: isReg ? '#f0fdf4' : 'linear-gradient(135deg, #6366f1, #06b6d4)',
+                                                color: isReg ? '#166534' : '#fff',
+                                                boxShadow: isReg ? 'none' : '0 4px 12px rgba(99,102,241,0.25)',
+                                            }}>
+                                                {registering === event._id ? '...' : isReg ? '✓ Registered' : 'Register Now'}
                                             </button>
-                                        ) : (
-                                            <button
-                                                onClick={() => handleRegister(event._id, false)}
-                                                className="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold text-sm hover:bg-indigo-700 transition-colors"
-                                            >
-                                                Register Now
-                                            </button>
+                                        )}
+                                        {event.link && isReg && !isPast && (
+                                            <a href={event.link} target="_blank" rel="noopener noreferrer" style={{ textAlign: 'center', padding: '0.5rem', borderRadius: '0.625rem', fontSize: '0.78rem', fontWeight: 700, color: C.accent, background: '#eff6ff', textDecoration: 'none' }}>
+                                                Join Link →
+                                            </a>
                                         )}
                                     </div>
                                 </motion.div>
                             );
-                        }) : (
-                            <div className="text-center py-24 bg-white rounded-3xl border border-slate-200 shadow-sm">
-                                <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                                    <CalendarIcon className="w-10 h-10 text-slate-300" />
-                                </div>
-                                <h3 className="text-xl font-bold text-slate-900 mb-2">No upcoming events</h3>
-                                <p className="text-slate-500 max-w-sm mx-auto">There are no events scheduled right now. Check back later or create your own event!</p>
-                            </div>
-                        )}
-                    </div>
+                        })}
+                    </AnimatePresence>
                 )}
             </div>
         </div>

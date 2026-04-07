@@ -1,255 +1,504 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import { motion } from 'framer-motion';
 
 const features = [
-  { icon: '📝', title: 'Posts & Articles', description: 'Share knowledge through rich-text posts, articles, and tutorials with the community.' },
-  { icon: '🗺️', title: 'Learning Paths', description: 'Curate step-by-step learning journeys to guide peers through complex topics.' },
-  { icon: '📊', title: 'Polls & Surveys', description: 'Gather insights and opinions with interactive polls from your colleagues.' },
-  { icon: '🏠', title: 'Rooms', description: 'Join topic-based rooms for focused discussions and real-time collaboration.' },
-  { icon: '🚀', title: 'Projects', description: 'Showcase and collaborate on projects, share progress and invite contributors.' },
-  { icon: '👥', title: 'Community', description: 'Connect with experts, mentors, and peers across your organization.' },
-];
-const stats = [
-  { label: 'Active Users', value: '2,400+' },
-  { label: 'Posts Shared', value: '12,500+' },
-  { label: 'Learning Paths', value: '340+' },
-  { label: 'Projects', value: '900+' },
+  {
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-7 h-7">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 01-2.25 2.25M16.5 7.5V18a2.25 2.25 0 002.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 002.25 2.25h13.5M6 7.5h3v3H6v-3z" />
+      </svg>
+    ),
+    title: 'Rich Articles & Posts', 
+    description: 'Share knowledge through beautifully formatted posts with code, images, and rich media.',
+    color: 'from-cyan-500 to-blue-500',
+    glow: 'rgba(6, 182, 212, 0.3)'
+  },
+  {
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-7 h-7">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" />
+      </svg>
+    ),
+    title: 'Learning Paths',
+    description: 'Curate step-by-step journeys to guide your team through complex technical topics.',
+    color: 'from-purple-500 to-pink-500',
+    glow: 'rgba(168, 85, 247, 0.3)'
+  },
+  {
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-7 h-7">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+      </svg>
+    ),
+    title: 'Live Community Rooms',
+    description: 'Join real-time topic-based chat rooms for focused discussions and collaboration.',
+    color: 'from-emerald-500 to-cyan-500',
+    glow: 'rgba(16, 185, 129, 0.3)'
+  },
+  {
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-7 h-7">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5M9 11.25v1.5M12 9v3.75m3-6v6" />
+      </svg>
+    ),
+    title: 'Polls & Insights',
+    description: 'Gather team opinions with interactive polls and visualization of results in real-time.',
+    color: 'from-orange-500 to-red-500',
+    glow: 'rgba(249, 115, 22, 0.3)'
+  },
+  {
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-7 h-7">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6.429 9.75L2.25 12l4.179 2.25m0-4.5l5.571 3 5.571-3m-11.142 0L2.25 7.5 12 2.25l9.75 5.25-4.179 2.25m0 0L21.75 12l-4.179 2.25m0 0l4.179 2.25L12 21.75 2.25 16.5l4.179-2.25m11.142 0l-5.571 3-5.571-3" />
+      </svg>
+    ),
+    title: 'Project Gallery',
+    description: 'Showcase your work, get feedback, and find collaborators across the platform.',
+    color: 'from-violet-500 to-purple-500',
+    glow: 'rgba(139, 92, 246, 0.3)'
+  },
+  {
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-7 h-7">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 007.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M7.73 9.728a6.726 6.726 0 002.748 1.35m8.272-6.842V4.5c0 2.108-.966 3.99-2.48 5.228m2.48-5.492a46.32 46.32 0 012.916.52 6.003 6.003 0 01-5.395 4.972m0 0a6.726 6.726 0 01-2.749 1.35m0 0a6.772 6.772 0 01-3.044 0" />
+      </svg>
+    ),
+    title: 'Leaderboard & Reputation',
+    description: 'Earn points for contributions. Rise through the ranks and build your expert profile.',
+    color: 'from-yellow-500 to-orange-500',
+    glow: 'rgba(234, 179, 8, 0.3)'
+  },
 ];
 
-import { useTheme } from '../context/ThemeContext';
+const stats = [
+  { value: '2,400+', label: 'Active Members', icon: '👥' },
+  { value: '12,500+', label: 'Posts Shared', icon: '📝' },
+  { value: '340+', label: 'Learning Paths', icon: '🗺️' },
+  { value: '900+', label: 'Projects', icon: '🚀' },
+];
+
+// Particle component
+function Particle({ x, y, size, delay }: { x: number; y: number; size: number; delay: number }) {
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        left: `${x}%`,
+        top: `${y}%`,
+        width: size,
+        height: size,
+        borderRadius: '50%',
+        background: `rgba(6, 182, 212, ${Math.random() * 0.5 + 0.1})`,
+        boxShadow: `0 0 ${size * 2}px rgba(6, 182, 212, 0.5)`,
+        animation: `float ${8 + delay}s ease-in-out infinite`,
+        animationDelay: `${delay}s`,
+      }}
+    />
+  );
+}
 
 function Home() {
   const auth = React.useContext(AuthContext);
   const user = auth?.user ?? null;
   const navigate = useNavigate();
-  const { theme, toggleTheme } = useTheme();
-  const isDark = theme === 'dark';
+  const heroRef = useRef<HTMLDivElement>(null);
+  const [particles] = useState(() =>
+    Array.from({ length: 30 }, (_, i) => ({
+      id: i,
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      size: Math.random() * 3 + 1,
+      delay: Math.random() * 8,
+    }))
+  );
 
   return (
-    <div className="min-h-screen" style={{ 
-      backgroundColor: isDark ? '#020617' : '#fcfcfd', 
-      color: isDark ? '#f1f5f9' : '#0f172a', 
-      fontFamily: '"Inter", sans-serif', 
-      overflowX: 'hidden',
-      transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
-    }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#020617', color: '#f1f5f9', fontFamily: '"Inter", sans-serif', overflowX: 'hidden' }}>
       
-      {/* Soft Pastel Animated Mesh Background (Light/Dark Theme) */}
-      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', top: '-15%', left: '-10%', width: '50vw', height: '50vw', background: isDark ? 'radial-gradient(circle, rgba(99,102,241,0.05) 0%, transparent 70%)' : 'radial-gradient(circle, rgba(167,139,250,0.1) 0%, transparent 70%)', filter: 'blur(60px)', animation: 'float 20s ease-in-out infinite' }} />
-        <div style={{ position: 'absolute', bottom: '-10%', right: '-10%', width: '60vw', height: '60vw', background: isDark ? 'radial-gradient(circle, rgba(6,182,212,0.05) 0%, transparent 70%)' : 'radial-gradient(circle, rgba(96,165,250,0.1) 0%, transparent 70%)', filter: 'blur(80px)', animation: 'float 25s ease-in-out infinite reverse' }} />
-        <div style={{ position: 'absolute', top: '30%', right: '20%', width: '40vw', height: '40vw', background: isDark ? 'radial-gradient(circle, rgba(236,72,153,0.03) 0%, transparent 70%)' : 'radial-gradient(circle, rgba(244,114,182,0.08) 0%, transparent 70%)', filter: 'blur(60px)', animation: 'pulse 15s ease-in-out infinite' }} />
-        
-        {/* Subtle grid for professional feel */}
-        <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(circle at center, transparent 0%, ${isDark ? '#020617' : '#fcfcfd'} 100%), url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h40v40H0V0zm1 1h38v38H1V1z' fill='${isDark ? '%23ffffff' : '%23000000'}' fill-opacity='${isDark ? '0.01' : '0.02'}' fill-rule='evenodd'/%3E%3C/svg%3E")` }} />
+      {/* ─── Cosmic Background ─── */}
+      <div className="cosmic-bg">
+        <div className="cosmic-orb cosmic-orb-1" />
+        <div className="cosmic-orb cosmic-orb-2" />
+        <div className="cosmic-orb cosmic-orb-3" />
+        <div className="grid-texture" />
+        {/* Particles */}
+        <div style={{ position: 'absolute', inset: 0 }}>
+          {particles.map(p => <Particle key={p.id} {...p} />)}
+        </div>
       </div>
 
-      {/* NAVBAR */}
-      <nav style={{ 
-        background: isDark ? 'rgba(2, 6, 23, 0.8)' : 'rgba(255, 255, 255, 0.8)', 
-        backdropFilter: 'blur(16px)', 
-        borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}`, 
-        position: 'sticky', 
-        top: 0, 
-        zIndex: 50, 
-        padding: '0 2rem',
-        transition: 'all 0.3s ease'
-      }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '75px' }}>
+      {/* ─── NAVBAR ─── */}
+      <nav className="glass-nav" style={{ position: 'sticky', top: 0, zIndex: 50 }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 1.5rem', height: '72px' }}>
           <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none' }}>
-            <div style={{ width: 44, height: 44, borderRadius: '12px', background: 'linear-gradient(135deg, #2563eb, #4f46e5)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: '#fff', boxShadow: '0 4px 14px rgba(79,70,229,0.3)' }}>KS</div>
-            <span style={{ fontWeight: 800, fontSize: '1.3rem', color: isDark ? '#f1f5f9' : '#0f172a', letterSpacing: '-0.5px' }}>KnowledgeShare</span>
+            <div style={{
+              width: 42, height: 42, borderRadius: '12px',
+              background: 'linear-gradient(135deg, #06b6d4, #6366f1)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontWeight: 800, color: '#fff', fontSize: '1.1rem',
+              boxShadow: '0 0 20px rgba(6,182,212,0.4)'
+            }}>KS</div>
+            <span style={{
+              fontWeight: 800, fontSize: '1.2rem',
+              background: 'linear-gradient(135deg, #67e8f9, #a5b4fc)',
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+              fontFamily: '"Space Grotesk", sans-serif'
+            }}>KnowledgeShare</span>
           </Link>
+
           <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
-            <a href="#features" style={{ color: isDark ? '#94a3b8' : '#475569', textDecoration: 'none', fontWeight: 600, fontSize: '0.95rem', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = isDark ? '#fff' : '#0f172a'} onMouseLeave={e => e.currentTarget.style.color = isDark ? '#94a3b8' : '#475569'}>Features</a>
-            <a href="#stats" style={{ color: isDark ? '#94a3b8' : '#475569', textDecoration: 'none', fontWeight: 600, fontSize: '0.95rem', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = isDark ? '#fff' : '#0f172a'} onMouseLeave={e => e.currentTarget.style.color = isDark ? '#94a3b8' : '#475569'}>Impact</a>
-            
-            {/* Theme Toggle Button */}
-            <button 
-              onClick={toggleTheme}
-              style={{ 
-                background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', 
-                border: 'none', 
-                borderRadius: '12px', 
-                width: '40px', 
-                height: '40px', 
-                cursor: 'pointer', 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center',
-                transition: 'all 0.2s ease',
-                color: isDark ? '#fbbf24' : '#64748b'
+            {[
+              { href: '#features', label: 'Features' },
+              { href: '#stats', label: 'Impact' },
+            ].map(item => (
+              <a key={item.href} href={item.href} style={{
+                color: '#64748b', textDecoration: 'none', fontWeight: 600,
+                fontSize: '0.9rem', transition: 'color 0.2s'
               }}
-              onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
-              onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-            >
-              {isDark ? (
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" fillRule="evenodd" clipRule="evenodd"></path></svg>
-              ) : (
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
-              )}
-            </button>
+              onMouseEnter={e => e.currentTarget.style.color = '#67e8f9'}
+              onMouseLeave={e => e.currentTarget.style.color = '#64748b'}>
+                {item.label}
+              </a>
+            ))}
+
             {user ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginLeft: '1rem', borderLeft: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`, paddingLeft: '1.5rem' }}>
-                <span style={{ color: isDark ? '#94a3b8' : '#64748b', fontSize: '0.95rem', fontWeight: 600 }}>Hello, <span style={{ color: isDark ? '#fff' : '#0f172a' }}>{user.name.split(" ")[0]}</span></span>
-                <button onClick={() => navigate('/dashboard')} style={{ background: isDark ? '#f8fafc' : '#0f172a', color: isDark ? '#020617' : '#fff', border: 'none', borderRadius: '10px', padding: '10px 24px', fontWeight: 700, cursor: 'pointer', fontSize: '0.95rem', boxShadow: '0 4px 14px rgba(0,0,0,0.15)', transition: 'all 0.2s' }} onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.2)'; }} onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(0,0,0,0.15)'; }}>App Dashboard</button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', borderLeft: '1px solid rgba(100,160,255,0.15)', paddingLeft: '1.5rem', marginLeft: '0.5rem' }}>
+                <span style={{ color: '#64748b', fontSize: '0.9rem' }}>
+                  Hey, <span style={{ color: '#67e8f9', fontWeight: 700 }}>{user.name?.split(' ')[0]}</span>
+                </span>
+                <button onClick={() => navigate('/dashboard')} className="btn-primary" style={{ padding: '0.6rem 1.5rem' }}>
+                  <span>Dashboard</span>
+                </button>
               </div>
             ) : (
-              <div style={{ display: 'flex', gap: '1rem', marginLeft: '1rem', borderLeft: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`, paddingLeft: '1.5rem' }}>
-                <button onClick={() => navigate('/login')} style={{ background: 'transparent', color: isDark ? '#94a3b8' : '#475569', border: 'none', padding: '10px 16px', fontWeight: 600, cursor: 'pointer', fontSize: '0.95rem', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = isDark ? '#fff' : '#0f172a'} onMouseLeave={e => e.currentTarget.style.color = isDark ? '#94a3b8' : '#475569'}>Log in</button>
-                <button onClick={() => navigate('/register')} style={{ background: isDark ? '#f8fafc' : '#0f172a', color: isDark ? '#020617' : '#fff', border: 'none', borderRadius: '10px', padding: '10px 28px', fontWeight: 700, cursor: 'pointer', fontSize: '0.95rem', transition: 'all 0.2s', boxShadow: '0 4px 14px rgba(0,0,0,0.15)' }} onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.2)'; }} onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(0,0,0,0.15)'; }}>Sign Up</button>
+              <div style={{ display: 'flex', gap: '0.75rem', borderLeft: '1px solid rgba(100,160,255,0.15)', paddingLeft: '1.5rem', marginLeft: '0.5rem' }}>
+                <button onClick={() => navigate('/login')} className="btn-ghost">
+                  Log in
+                </button>
+                <button onClick={() => navigate('/register')} className="btn-primary" style={{ padding: '0.6rem 1.5rem' }}>
+                  <span>Get Started</span>
+                </button>
               </div>
             )}
           </div>
         </div>
       </nav>
 
-      {/* HERO SECTION */}
-      <section style={{ minHeight: '85vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '4rem 2rem', position: 'relative', zIndex: 10 }}>
+      {/* ─── HERO SECTION ─── */}
+      <section ref={heroRef} style={{ minHeight: '90vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '6rem 1.5rem 4rem', position: 'relative', zIndex: 10 }}>
         
-        {/* Release Pill */}
-        <div style={{ 
-          display: 'inline-flex', 
-          alignItems: 'center', 
-          gap: '0.75rem', 
-          background: isDark ? 'rgba(255,255,255,0.03)' : '#fff', 
-          border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}`, 
-          borderRadius: '999px', 
-          padding: '6px 16px', 
-          fontSize: '0.85rem', 
-          color: isDark ? '#94a3b8' : '#475569', 
-          marginBottom: '2.5rem', 
-          boxShadow: '0 4px 14px rgba(0,0,0,0.03)', 
-          fontWeight: 600, 
-          cursor: 'pointer', 
-          transition: 'all 0.3s' 
-        }} onMouseEnter={e => e.currentTarget.style.background = isDark ? 'rgba(255,255,255,0.06)' : '#f8fafc'} onMouseLeave={e => e.currentTarget.style.background = isDark ? 'rgba(255,255,255,0.03)' : '#fff'}>
-          <span style={{ width: 20, height: 20, background: isDark ? '#1e293b' : '#e0e7ff', color: '#4f46e5', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}>✦</span>
-          Introducing KnowledgeShare 2.0
-        </div>
-        
-        <h1 style={{ fontSize: 'clamp(3.5rem, 8vw, 5.5rem)', color: isDark ? '#f8fafc' : '#020617', fontWeight: 900, lineHeight: 1.05, maxWidth: '900px', marginBottom: '1.5rem', letterSpacing: '-2px', transition: 'color 0.3s' }}>
-          Your team's intelligence, <br/>
-          <span style={{ color: '#2563eb' }}>finally unified.</span>
-        </h1>
-        
-        <p style={{ fontSize: '1.25rem', color: isDark ? '#94a3b8' : '#475569', maxWidth: '650px', lineHeight: 1.6, marginBottom: '3rem', fontWeight: 500, transition: 'color 0.3s' }}>
-          Create, organize, and discover documentation effortlessly. Say goodbye to scattered wiki pages and endless chat threads. 
-        </p>
-        
-        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
-          <button onClick={() => navigate(user ? '/dashboard' : '/register')} style={{ background: 'linear-gradient(135deg, #2563eb, #4f46e5)', color: '#fff', border: 'none', borderRadius: '12px', padding: '16px 36px', fontWeight: 700, fontSize: '1.1rem', cursor: 'pointer', boxShadow: '0 10px 25px rgba(79,70,229,0.3)', transition: 'all 0.2s' }} onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 15px 35px rgba(79,70,229,0.4)'; }} onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 10px 25px rgba(79,70,229,0.3)'; }}>
-            {user ? 'Open Workspace' : 'Get Started'}
-          </button>
-          
-          <button onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })} style={{ background: isDark ? 'transparent' : '#fff', color: isDark ? '#f1f5f9' : '#0f172a', border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`, borderRadius: '12px', padding: '16px 36px', fontWeight: 600, fontSize: '1.1rem', cursor: 'pointer', boxShadow: isDark ? 'none' : '0 4px 14px rgba(0,0,0,0.05)', transition: 'all 0.2s' }} onMouseEnter={e => { e.currentTarget.style.background = isDark ? 'rgba(255,255,255,0.05)' : '#f8fafc'; e.currentTarget.style.transform = 'translateY(-2px)'; }} onMouseLeave={e => { e.currentTarget.style.background = isDark ? 'transparent' : '#fff'; e.currentTarget.style.transform = 'none'; }}>
-            See How It Works
-          </button>
-        </div>
-      </section>
-
-      {/* PREMIUM DASHBOARD PREVIEW ELEMENT */}
-      <section style={{ padding: '0 2rem 6rem', position: 'relative', zIndex: 20 }}>
-        <div style={{ 
-          maxWidth: '1000px', 
-          margin: '0 auto', 
-          background: isDark ? '#0f172a' : '#fff', 
-          borderRadius: '24px', 
-          border: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.08)'}`, 
-          boxShadow: isDark ? '0 25px 50px -12px rgba(0,0,0,0.5)' : '0 25px 50px -12px rgba(0,0,0,0.1)', 
-          overflow: 'hidden',
-          transition: 'all 0.3s ease'
-        }}>
-            <div style={{ height: '40px', background: isDark ? '#1e293b' : '#f8fafc', borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}`, display: 'flex', alignItems: 'center', padding: '0 20px', gap: '8px' }}>
-                <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#f87171' }} />
-                <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#fbbf24' }} />
-                <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#34d399' }} />
-            </div>
-            <div style={{ padding: '40px', display: 'flex', gap: '30px' }}>
-                <div style={{ width: '25%', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                    <div style={{ height: 20, width: '80%', background: isDark ? '#1e293b' : '#f1f5f9', borderRadius: 4 }} />
-                    <div style={{ height: 20, width: '60%', background: isDark ? '#1e293b' : '#f1f5f9', borderRadius: 4 }} />
-                    <div style={{ height: 20, width: '90%', background: isDark ? '#1e293b' : '#f1f5f9', borderRadius: 4 }} />
-                    <div style={{ height: 20, width: '50%', background: isDark ? '#1e293b' : '#f1f5f9', borderRadius: 4 }} />
-                </div>
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                    <div style={{ height: 40, width: '50%', background: isDark ? '#334155' : '#e2e8f0', borderRadius: 6 }} />
-                    <div style={{ height: 100, width: '100%', background: isDark ? 'rgba(34, 197, 94, 0.05)' : '#f0fdf4', borderRadius: 12, border: `1px solid ${isDark ? 'rgba(34, 197, 94, 0.2)' : '#bbf7d0'}` }} />
-                    <div style={{ height: 15, width: '100%', background: isDark ? '#1e293b' : '#f1f5f9', borderRadius: 4 }} />
-                    <div style={{ height: 15, width: '100%', background: isDark ? '#1e293b' : '#f1f5f9', borderRadius: 4 }} />
-                    <div style={{ height: 15, width: '80%', background: isDark ? '#1e293b' : '#f1f5f9', borderRadius: 4 }} />
-                </div>
-            </div>
-        </div>
-      </section>
-
-      {/* STATS STRIP */}
-      <section id="stats" style={{ padding: '4rem 2rem', background: isDark ? 'rgba(15, 23, 42, 0.5)' : '#fff', borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}`, borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}`, transition: 'all 0.3s ease' }}>
-        <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '3rem', textAlign: 'center' }}>
-          {stats.map(s => (
-            <div key={s.label}>
-              <div style={{ fontSize: '3rem', fontWeight: 900, color: isDark ? '#f8fafc' : '#0f172a', marginBottom: '0.2rem', letterSpacing: '-1px' }}>{s.value}</div>
-              <div style={{ color: isDark ? '#64748b' : '#64748b', fontSize: '0.9rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1.5px' }}>{s.label}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* CLEAN FEATURES SECTION */}
-      <section id="features" style={{ padding: '8rem 2rem', maxWidth: '1200px', margin: '0 auto', position: 'relative', zIndex: 10 }}>
-        <div style={{ textAlign: 'center', marginBottom: '5rem' }}>
-          <h2 style={{ fontSize: '2.5rem', fontWeight: 900, color: isDark ? '#f8fafc' : '#020617', marginBottom: '1.5rem', letterSpacing: '-1px' }}>Built for highly effective teams</h2>
-          <p style={{ color: isDark ? '#94a3b8' : '#475569', fontSize: '1.15rem', maxWidth: '600px', margin: '0 auto', lineHeight: 1.6 }}>Our suite of tools ensures that important information is never lost and always easily accessible.</p>
-        </div>
-        
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem' }}>
-          {features.map((f) => (
-            <div key={f.title} style={{ background: isDark ? '#0f172a' : '#fff', border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`, borderRadius: '20px', padding: '2.5rem', transition: 'all 0.3s', boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.2)' : '0 4px 6px -1px rgba(0,0,0,0.02)' }}
-                 onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-5px)'; e.currentTarget.style.boxShadow = isDark ? '0 10px 30px rgba(0,0,0,0.4)' : '0 20px 25px -5px rgba(0,0,0,0.05)'; }}
-                 onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = isDark ? '0 4px 20px rgba(0,0,0,0.2)' : '0 4px 6px -1px rgba(0,0,0,0.02)'; }}>
-              <div style={{ width: 56, height: 56, borderRadius: '16px', background: isDark ? 'rgba(37, 99, 235, 0.1)' : '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem', marginBottom: '1.5rem' }}>{f.icon}</div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: isDark ? '#f1f5f9' : '#0f172a', marginBottom: '1rem' }}>{f.title}</h3>
-              <p style={{ color: isDark ? '#94a3b8' : '#64748b', fontSize: '1rem', lineHeight: 1.6 }}>{f.description}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* GLOWING CTA */}
-      <section style={{ padding: '8rem 2rem', textAlign: 'center', position: 'relative', zIndex: 10 }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto', position: 'relative' }}>
-          <div style={{ position: 'absolute', inset: -20, background: 'linear-gradient(135deg, #0cebeb, #a855f7, #6366f1)', filter: 'blur(60px)', opacity: 0.15, borderRadius: '40px' }} />
-          <div style={{ background: 'rgba(15,15,30,0.8)', backdropFilter: 'blur(40px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '32px', padding: '5rem 2rem', position: 'relative', overflow: 'hidden' }}>
-            <div style={{ position: 'absolute', top: 0, right: 0, width: '50%', height: '100%', background: 'radial-gradient(circle at top right, rgba(168,85,247,0.15), transparent 70%)' }} />
-            <div style={{ position: 'absolute', bottom: 0, left: 0, width: '50%', height: '100%', background: 'radial-gradient(circle at bottom left, rgba(6,182,212,0.15), transparent 70%)' }} />
-            
-            <h2 style={{ fontSize: '3rem', fontWeight: 900, color: '#fff', marginBottom: '1.5rem', letterSpacing: '-1px', position: 'relative', zIndex: 2 }}>Ready to elevate your team?</h2>
-            <p style={{ color: '#cbd5e1', marginBottom: '3rem', lineHeight: 1.7, fontSize: '1.2rem', maxWidth: '500px', margin: '0 auto 3rem auto', position: 'relative', zIndex: 2 }}>Join the platform engineered to turn your organization's scattered information into a powerful, unified knowledge engine.</p>
-            <button onClick={() => navigate('/register')} style={{ background: '#fff', color: '#000', border: 'none', borderRadius: '12px', padding: '18px 48px', fontWeight: 800, fontSize: '1.1rem', cursor: 'pointer', position: 'relative', zIndex: 2, transition: 'all 0.3s', boxShadow: '0 10px 30px rgba(255,255,255,0.2)' }} onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px) scale(1.02)'; e.currentTarget.style.boxShadow = '0 15px 40px rgba(255,255,255,0.3)'; }} onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 10px 30px rgba(255,255,255,0.2)'; }}>
-              Initialize Workspace
-            </button>
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        >
+          {/* Pill badge */}
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+            background: 'rgba(6,182,212,0.08)', border: '1px solid rgba(6,182,212,0.2)',
+            borderRadius: '999px', padding: '0.375rem 1rem',
+            fontSize: '0.8rem', color: '#67e8f9', fontWeight: 700,
+            letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '2.5rem'
+          }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#06b6d4', boxShadow: '0 0 8px #06b6d4', animation: 'glow-pulse 2s ease-in-out infinite', display: 'inline-block' }} />
+            Platform v2.0 — Now Live
           </div>
+
+          {/* Headline */}
+          <h1 style={{
+            fontSize: 'clamp(3rem, 8vw, 6rem)',
+            fontWeight: 900, lineHeight: 1.05,
+            letterSpacing: '-0.03em',
+            maxWidth: '900px', margin: '0 auto 1.5rem',
+            fontFamily: '"Space Grotesk", sans-serif'
+          }}>
+            Your team's intelligence,{' '}
+            <span className="text-gradient-hero">finally unified.</span>
+          </h1>
+
+          {/* Subheadline */}
+          <p style={{
+            fontSize: 'clamp(1rem, 2.5vw, 1.25rem)',
+            color: '#64748b', maxWidth: '600px', lineHeight: 1.7,
+            margin: '0 auto 3.5rem', fontWeight: 400
+          }}>
+            Create, discover, and share knowledge across your engineering org — with posts, learning paths, live community, and powerful search.
+          </p>
+
+          {/* CTA buttons */}
+          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center' }}>
+            <motion.button
+              onClick={() => navigate(user ? '/dashboard' : '/register')}
+              className="btn-primary"
+              style={{ padding: '0.9rem 2.5rem', fontSize: '1rem', borderRadius: '1rem' }}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+            >
+              <span>{user ? '🚀 Open Workspace' : '✨ Get Started Free'}</span>
+            </motion.button>
+            <motion.button
+              onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
+              className="btn-secondary"
+              style={{ padding: '0.9rem 2.5rem', fontSize: '1rem', borderRadius: '1rem' }}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+            >
+              See How It Works
+            </motion.button>
+          </div>
+
+          {/* Social proof */}
+          <div style={{ marginTop: '3rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex' }}>
+              {[1,2,3,4,5].map(i => (
+                <img key={i} src={`https://i.pravatar.cc/40?img=${i + 20}`}
+                  style={{ width: 32, height: 32, borderRadius: '50%', border: '2px solid rgba(6,182,212,0.3)', marginLeft: i > 1 ? -8 : 0 }} />
+              ))}
+            </div>
+            <span style={{ color: '#64748b', fontSize: '0.875rem' }}>
+              Joined by <strong style={{ color: '#67e8f9' }}>2,400+</strong> engineers
+            </span>
+          </div>
+        </motion.div>
+      </section>
+
+      {/* ─── MOCK DASHBOARD PREVIEW ─── */}
+      <section style={{ padding: '0 1.5rem 6rem', position: 'relative', zIndex: 10 }}>
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          style={{ maxWidth: '1000px', margin: '0 auto' }}
+        >
+          {/* Browser chrome */}
+          <div style={{
+            borderRadius: '1.25rem', overflow: 'hidden',
+            border: '1px solid rgba(100,160,255,0.15)',
+            boxShadow: '0 40px 80px -20px rgba(0,0,0,0.6), 0 0 0 1px rgba(6,182,212,0.1)',
+          }}>
+            {/* Chrome header */}
+            <div style={{
+              background: 'rgba(15, 23, 42, 0.9)', height: 44,
+              display: 'flex', alignItems: 'center', padding: '0 1.25rem', gap: '0.5rem',
+              borderBottom: '1px solid rgba(100,160,255,0.1)'
+            }}>
+              <div style={{ width: 12, height: 12, borderRadius: '50%', background: 'rgba(239,68,68,0.7)' }} />
+              <div style={{ width: 12, height: 12, borderRadius: '50%', background: 'rgba(251,191,36,0.7)' }} />
+              <div style={{ width: 12, height: 12, borderRadius: '50%', background: 'rgba(52,211,153,0.7)' }} />
+              <div style={{
+                flex: 1, marginLeft: '1rem', height: 26, borderRadius: 6,
+                background: 'rgba(30,41,59,0.8)', display: 'flex', alignItems: 'center',
+                padding: '0 0.75rem', gap: '0.5rem'
+              }}>
+                <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'rgba(6,182,212,0.5)' }} />
+                <span style={{ color: '#475569', fontSize: '0.75rem' }}>knowledgeshare.app/dashboard</span>
+              </div>
+            </div>
+            {/* Dashboard mock content */}
+            <div style={{ background: 'rgba(10, 15, 30, 0.95)', padding: '1.5rem', display: 'grid', gridTemplateColumns: '200px 1fr', gap: '1rem', minHeight: 280 }}>
+              {/* Sidebar mock */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                {[
+                  { w: '70%', c: 'rgba(6,182,212,0.8)' },
+                  { w: '55%', c: 'rgba(100,160,255,0.3)' },
+                  { w: '80%', c: 'rgba(100,160,255,0.3)' },
+                  { w: '60%', c: 'rgba(100,160,255,0.3)' },
+                  { w: '75%', c: 'rgba(100,160,255,0.3)' },
+                ].map((item, i) => (
+                  <div key={i} style={{ height: 10, width: item.w, background: item.c, borderRadius: 999, opacity: 0.7 }} />
+                ))}
+              </div>
+              {/* Main content mock */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '0.75rem' }}>
+                  {['rgba(6,182,212,0.1)', 'rgba(168,85,247,0.1)', 'rgba(16,185,129,0.1)'].map((bg, i) => (
+                    <div key={i} style={{ height: 50, borderRadius: 10, background: bg, border: `1px solid ${bg.replace('0.1', '0.3')}` }} />
+                  ))}
+                </div>
+                {[1,2,3].map(i => (
+                  <div key={i} style={{ height: 52, borderRadius: 10, background: 'rgba(22, 33, 62, 0.6)', border: '1px solid rgba(100,160,255,0.08)', padding: '0.75rem', display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: `rgba(${i===1?'6,182,212':i===2?'168,85,247':'16,185,129'},0.4)`, flexShrink: 0 }} />
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                      <div style={{ height: 8, width: `${55 + i * 10}%`, background: 'rgba(148,163,184,0.4)', borderRadius: 4 }} />
+                      <div style={{ height: 6, width: `${40 + i * 5}%`, background: 'rgba(100,116,139,0.3)', borderRadius: 4 }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </section>
+
+      {/* ─── STATS STRIP ─── */}
+      <section id="stats" style={{ position: 'relative', zIndex: 10, padding: '4rem 1.5rem', borderTop: '1px solid rgba(100,160,255,0.08)', borderBottom: '1px solid rgba(100,160,255,0.08)' }}>
+        <div style={{ maxWidth: '900px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '2.5rem', textAlign: 'center' }}>
+          {stats.map((s, i) => (
+            <motion.div
+              key={s.label}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.1, duration: 0.5 }}
+            >
+              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>{s.icon}</div>
+              <div style={{
+                fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.04em',
+                background: 'linear-gradient(135deg, #67e8f9, #a5b4fc)',
+                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                fontFamily: '"Space Grotesk", sans-serif', marginBottom: '0.25rem'
+              }}>{s.value}</div>
+              <div style={{ color: '#475569', fontSize: '0.85rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{s.label}</div>
+            </motion.div>
+          ))}
         </div>
       </section>
 
-      <footer style={{ 
-        borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}`, 
-        padding: '4rem 2rem', 
-        textAlign: 'center', 
-        color: isDark ? '#64748b' : '#64748b', 
-        fontSize: '0.9rem', 
-        position: 'relative', 
-        zIndex: 10, 
-        background: isDark ? 'rgba(2, 6, 23, 0.95)' : 'rgba(255, 255, 255, 0.8)', 
-        transition: 'all 0.3s ease' 
+      {/* ─── FEATURES ─── */}
+      <section id="features" style={{ padding: '8rem 1.5rem', maxWidth: '1200px', margin: '0 auto', position: 'relative', zIndex: 10 }}>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          style={{ textAlign: 'center', marginBottom: '5rem' }}
+        >
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+            background: 'rgba(168,85,247,0.1)', border: '1px solid rgba(168,85,247,0.2)',
+            borderRadius: '999px', padding: '0.375rem 1rem',
+            fontSize: '0.8rem', color: '#c084fc', fontWeight: 700,
+            letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '1.5rem'
+          }}>
+            ⚡ Everything You Need
+          </div>
+          <h2 style={{
+            fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 900,
+            letterSpacing: '-0.03em', marginBottom: '1.5rem',
+            fontFamily: '"Space Grotesk", sans-serif'
+          }}>
+            Built for highly effective teams
+          </h2>
+          <p style={{ color: '#475569', fontSize: '1.1rem', maxWidth: '560px', margin: '0 auto', lineHeight: 1.7 }}>
+            Our suite of tools ensures important information is never lost and always discoverable by the people who need it.
+          </p>
+        </motion.div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
+          {features.map((f, i) => (
+            <motion.div
+              key={f.title}
+              className="glass-card"
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.08, duration: 0.5 }}
+              style={{ padding: '2rem', cursor: 'default' }}
+            >
+              <div style={{
+                width: 56, height: 56, borderRadius: '1rem', marginBottom: '1.25rem',
+                background: `linear-gradient(135deg, ${f.glow.replace('0.3', '0.15')}, transparent)`,
+                border: `1px solid ${f.glow.replace('0.3', '0.2')}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: f.glow.includes('6, 182') ? '#06b6d4' : f.glow.includes('168, 85') ? '#a855f7' : f.glow.includes('16, 185') ? '#10b981' : f.glow.includes('249, 115') ? '#f97316' : f.glow.includes('139, 92') ? '#8b5cf6' : '#eab308'
+              }}>
+                {f.icon}
+              </div>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.75rem', color: '#e2e8f0' }}>{f.title}</h3>
+              <p style={{ color: '#475569', fontSize: '0.95rem', lineHeight: 1.7, margin: 0 }}>{f.description}</p>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* ─── CTA SECTION ─── */}
+      <section style={{ padding: '6rem 1.5rem 8rem', position: 'relative', zIndex: 10 }}>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          style={{ maxWidth: '800px', margin: '0 auto', position: 'relative' }}
+        >
+          <div style={{
+            position: 'absolute', inset: -30,
+            background: 'conic-gradient(from 180deg at 50% 50%, #6366f1 0deg, #06b6d4 72deg, #ec4899 144deg, #a855f7 216deg, #6366f1 360deg)',
+            filter: 'blur(60px)', opacity: 0.12, borderRadius: '50%'
+          }} />
+
+          <div className="glass-premium" style={{ padding: '4rem 3rem', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+            {/* Decorative rings */}
+            <div style={{
+              position: 'absolute', top: -50, right: -50,
+              width: 200, height: 200, borderRadius: '50%',
+              border: '1px solid rgba(6,182,212,0.15)',
+              animation: 'spin-slow 20s linear infinite'
+            }} />
+            <div style={{
+              position: 'absolute', bottom: -30, left: -30,
+              width: 140, height: 140, borderRadius: '50%',
+              border: '1px solid rgba(168,85,247,0.15)',
+              animation: 'spin-slow 15s linear infinite reverse'
+            }} />
+
+            <div style={{ position: 'relative', zIndex: 1 }}>
+              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🚀</div>
+              <h2 style={{
+                fontSize: 'clamp(1.75rem, 4vw, 3rem)',
+                fontWeight: 900, letterSpacing: '-0.03em', marginBottom: '1rem',
+                fontFamily: '"Space Grotesk", sans-serif'
+              }}>
+                Ready to elevate your team?
+              </h2>
+              <p style={{ color: '#64748b', lineHeight: 1.7, fontSize: '1.05rem', maxWidth: '500px', margin: '0 auto 2.5rem' }}>
+                Join the platform engineered to turn your organization's scattered information into a unified, searchable knowledge engine.
+              </p>
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                <motion.button
+                  onClick={() => navigate('/register')}
+                  className="btn-primary"
+                  style={{ padding: '0.9rem 2.5rem', fontSize: '1rem', borderRadius: '1rem' }}
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                >
+                  <span>Start for Free →</span>
+                </motion.button>
+                <motion.button
+                  onClick={() => navigate('/login')}
+                  className="btn-secondary"
+                  style={{ padding: '0.9rem 2rem', fontSize: '1rem', borderRadius: '1rem' }}
+                  whileHover={{ scale: 1.03 }}
+                >
+                  Sign In
+                </motion.button>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </section>
+
+      {/* ─── FOOTER ─── */}
+      <footer style={{
+        borderTop: '1px solid rgba(100,160,255,0.08)',
+        padding: '3rem 1.5rem',
+        textAlign: 'center',
+        color: '#334155',
+        fontSize: '0.85rem',
+        position: 'relative', zIndex: 10
       }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <p style={{ marginBottom: '1.5rem', color: isDark ? '#94a3b8' : '#64748b' }}>© {new Date().getFullYear()} KnowledgeShare Portal. Engineered for teams that win.</p>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem' }}>
-            <Link to="/terms" style={{ color: isDark ? '#6366f1' : '#94a3b8', textDecoration: 'none', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = isDark ? '#818cf8' : '#0f172a'} onMouseLeave={e => e.currentTarget.style.color = isDark ? '#6366f1' : '#94a3b8'}>Terms of Service</Link>
-            <Link to="/privacy" style={{ color: isDark ? '#6366f1' : '#94a3b8', textDecoration: 'none', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = isDark ? '#818cf8' : '#0f172a'} onMouseLeave={e => e.currentTarget.style.color = isDark ? '#6366f1' : '#94a3b8'}>Privacy Policy</Link>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+            {['Terms of Service', 'Privacy Policy', 'Help Center', 'Contact'].map(link => (
+              <Link key={link} to={`/${link.toLowerCase().replace(/ /g, '-')}`}
+                style={{ color: '#334155', textDecoration: 'none', transition: 'color 0.2s' }}
+                onMouseEnter={e => e.currentTarget.style.color = '#67e8f9'}
+                onMouseLeave={e => e.currentTarget.style.color = '#334155'}>
+                {link}
+              </Link>
+            ))}
           </div>
+          <p>© {new Date().getFullYear()} KnowledgeShare Portal — Engineered for teams that win.</p>
         </div>
       </footer>
     </div>

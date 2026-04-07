@@ -10,249 +10,150 @@ interface Project {
     description: string;
     coverImage: string;
     tags: string[];
-    author: {
-        name: string;
-        avatar: string;
-    };
+    author: { name: string; avatar: string };
     views: number;
     likes: string[];
     createdAt: string;
 }
 
+const C = { bg: '#f8fafc', card: '#ffffff', border: '#e2e8f0', t1: '#0f172a', t2: '#475569', t3: '#94a3b8', accent: '#6366f1' };
+const FILTERS = ['All', 'Web', 'Mobile', 'AI', 'Game', 'Tool', 'Open Source'];
+
 const ProjectGallery = () => {
     const [projects, setProjects] = useState<Project[]>([]);
-    const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeFilter, setActiveFilter] = useState('All');
-    const [searchQuery, setSearchQuery] = useState('');
-    const [sortBy, setSortBy] = useState('popular'); // 'popular' | 'newest' | 'oldest'
+    const [search, setSearch] = useState('');
+    const [sortBy, setSortBy] = useState('popular');
 
     useEffect(() => {
-        const fetchProjects = async () => {
-            try {
-                const res = await api.get('/projects');
-                if (Array.isArray(res.data)) {
-                    setProjects(res.data);
-                    setFilteredProjects(res.data);
-                } else {
-                    console.error("API returned non-array:", res.data);
-                }
-            } catch (err) {
-                console.error('Error fetching projects:', err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchProjects();
+        api.get('/projects')
+            .then(r => setProjects(Array.isArray(r.data) ? r.data : []))
+            .catch(e => console.error(e))
+            .finally(() => setLoading(false));
     }, []);
 
-    // Filter & Sort Logic
-    useEffect(() => {
-        let result = [...projects];
-
-        // 1. Search
-        if (searchQuery) {
-            const lowerQuery = searchQuery.toLowerCase();
-            result = result.filter(p =>
-                p.title.toLowerCase().includes(lowerQuery) ||
-                p.tags.some(tag => tag.toLowerCase().includes(lowerQuery))
-            );
-        }
-
-        // 2. Filter (Category/Tags - simulating categories via tags for now)
-        if (activeFilter !== 'All') {
-            result = result.filter(p => p.tags.some(tag => tag.toLowerCase().includes(activeFilter.toLowerCase())));
-        }
-
-        // 3. Sort
-        if (sortBy === 'popular') {
-            result.sort((a, b) => b.likes.length - a.likes.length || b.views - a.views);
-        } else if (sortBy === 'newest') {
-            result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        } else if (sortBy === 'oldest') {
-            result.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-        }
-
-        setFilteredProjects(result);
-    }, [projects, searchQuery, activeFilter, sortBy]);
-
-    const filters = ['All', 'Web', 'Mobile', 'AI', 'Game', 'Tool'];
+    const filtered = projects
+        .filter(p => {
+            const matchSearch = !search || p.title.toLowerCase().includes(search.toLowerCase()) || p.tags.some(t => t.toLowerCase().includes(search.toLowerCase()));
+            const matchFilter = activeFilter === 'All' || p.tags.some(t => t.toLowerCase().includes(activeFilter.toLowerCase()));
+            return matchSearch && matchFilter;
+        })
+        .sort((a, b) => {
+            if (sortBy === 'popular') return b.likes.length - a.likes.length || b.views - a.views;
+            if (sortBy === 'newest') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+            return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        });
 
     return (
-        <div className="min-h-screen bg-slate-50 font-sans selection:bg-pink-200 selection:text-slate-900">
-            <Navbar forceWhite={true} />
+        <div style={{ minHeight: '100vh', background: C.bg, fontFamily: '"Inter", sans-serif' }}>
+            <Navbar />
+            <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 3, background: 'linear-gradient(to right, #ec4899, #6366f1, #06b6d4)', zIndex: 99 }} />
 
-            {/* Hero Section */}
-            <div className="relative bg-slate-100 pt-32 pb-24 overflow-hidden">
-                <div className="absolute inset-0">
-                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-100 via-purple-100 to-white opacity-95"></div>
-                    <div className="absolute -top-24 -left-24 w-96 h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-blob"></div>
-                    <div className="absolute top-0 right-0 w-80 h-80 bg-pink-200 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-blob animation-delay-2000"></div>
-                    <div className="absolute -bottom-32 left-1/2 w-96 h-96 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-blob animation-delay-4000"></div>
-                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-multiply"></div>
-                </div>
-
-                <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center z-10">
-                    <motion.h1
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="text-5xl md:text-7xl font-display font-bold text-slate-900 mb-6 tracking-tight"
-                    >
-                        Project <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-purple-600">Showcase</span>
-                    </motion.h1>
-                    <motion.p
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1 }}
-                        className="text-xl text-slate-600 max-w-3xl mx-auto mb-10 leading-relaxed"
-                    >
-                        Explore the cutting edge of what our community is building. Open source, experimental, and inspiring.
-                    </motion.p>
-
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.2 }}
-                        className="flex justify-center"
-                    >
-                        <Link
-                            to="/submit-project"
-                            className="group relative inline-flex items-center justify-center px-8 py-4 bg-white text-indigo-900 font-bold rounded-full overflow-hidden transition-all hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] hover:scale-105"
-                        >
-                            <span className="absolute w-0 h-0 transition-all duration-500 ease-out bg-indigo-50 rounded-full group-hover:w-56 group-hover:h-56 opacity-10"></span>
-                            <span className="relative flex items-center">
-                                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
-                                Submit Your Project
-                            </span>
-                        </Link>
-                    </motion.div>
+            {/* Hero */}
+            <div style={{ background: 'linear-gradient(135deg, #fdf2f8 0%, #eff6ff 60%, #f0fdf4 100%)', padding: '7rem 1.5rem 3.5rem', textAlign: 'center', borderBottom: `1px solid ${C.border}` }}>
+                <p style={{ fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#ec4899', marginBottom: '0.5rem' }}>Community Showcase</p>
+                <h1 style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 900, color: C.t1, letterSpacing: '-0.03em', fontFamily: '"Space Grotesk", sans-serif', marginBottom: '1rem' }}>
+                    Project <span style={{ background: 'linear-gradient(135deg, #ec4899, #6366f1)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Gallery</span> 🚀
+                </h1>
+                <p style={{ color: C.t2, fontSize: '1.05rem', maxWidth: 520, margin: '0 auto 2rem', lineHeight: 1.7 }}>
+                    Explore what our community is building — open source, experimental, and inspiring.
+                </p>
+                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                    {[
+                        { label: 'Projects', value: projects.length, icon: '🚀' },
+                        { label: 'Total Likes', value: projects.reduce((s, p) => s + p.likes.length, 0), icon: '❤️' },
+                        { label: 'Total Views', value: projects.reduce((s, p) => s + (p.views || 0), 0), icon: '👁️' },
+                    ].map(s => (
+                        <div key={s.label} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: '0.875rem', padding: '0.875rem 1.5rem', textAlign: 'center' }}>
+                            <div style={{ fontSize: '1.4rem', fontWeight: 900, color: C.t1, fontFamily: '"Space Grotesk", sans-serif' }}>{s.icon} {s.value}</div>
+                            <div style={{ fontSize: '0.72rem', color: C.t3, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: '0.15rem' }}>{s.label}</div>
+                        </div>
+                    ))}
+                    <Link to="/submit-project" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.875rem 1.75rem', borderRadius: '0.875rem', fontWeight: 700, fontSize: '0.9rem', textDecoration: 'none', color: '#fff', background: 'linear-gradient(135deg, #ec4899, #6366f1)', boxShadow: '0 4px 14px rgba(99,102,241,0.3)', alignSelf: 'center' }}>
+                        <svg style={{ width: 16, height: 16 }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
+                        Submit Project
+                    </Link>
                 </div>
             </div>
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 -mt-10 relative z-20">
-                {/* Controls */}
-                <div className="bg-white/80 backdrop-blur-md border border-slate-200 p-2 rounded-2xl shadow-xl mb-12 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    {/* Filters */}
-                    <div className="flex p-1 overflow-x-auto gap-1 no-scrollbar">
-                        {filters.map(filter => (
-                            <button
-                                key={filter}
-                                onClick={() => setActiveFilter(filter)}
-                                className={`px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide transition-all whitespace-nowrap ${activeFilter === filter
-                                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200/60'
-                                    : 'bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-900'
-                                    }`}
-                            >
-                                {filter}
-                            </button>
+            {/* Controls */}
+            <div style={{ maxWidth: 1200, margin: '0 auto', padding: '1.5rem 1.5rem 0' }}>
+                <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: '1rem', padding: '0.75rem 1rem', display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center' }}>
+                    {/* Filter chips */}
+                    <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
+                        {FILTERS.map(f => (
+                            <button key={f} onClick={() => setActiveFilter(f)} style={{ padding: '0.375rem 0.875rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '0.78rem', transition: 'all 0.2s', background: activeFilter === f ? C.accent : 'transparent', color: activeFilter === f ? '#fff' : C.t2 }}>{f}</button>
                         ))}
                     </div>
-
-                    {/* Search & Sort */}
-                    <div className="flex flex-col sm:flex-row gap-2 p-1">
-                        <div className="relative group">
-                            <input
-                                type="text"
-                                placeholder="Search..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full sm:w-64 pl-10 pr-4 py-2.5 bg-slate-100 border border-transparent rounded-xl text-sm font-medium text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all"
-                            />
-                            <svg className="w-5 h-5 text-slate-400 absolute left-3 top-2.5 group-focus-within:text-indigo-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
+                    <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.625rem', alignItems: 'center' }}>
+                        {/* Search */}
+                        <div style={{ position: 'relative' }}>
+                            <svg style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', width: 15, height: 15, color: C.t3 }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search..." style={{ padding: '0.45rem 0.75rem 0.45rem 2rem', borderRadius: '0.5rem', border: `1px solid ${C.border}`, fontSize: '0.82rem', color: C.t1, background: C.bg, outline: 'none', width: 180, fontFamily: '"Inter", sans-serif' }} />
                         </div>
-
-                        <div className="relative">
-                            <select
-                                value={sortBy}
-                                onChange={(e) => setSortBy(e.target.value)}
-                                className="appearance-none w-full pl-4 pr-10 py-2.5 bg-slate-100 border border-transparent rounded-xl text-sm font-bold text-slate-600 focus:outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-                            >
-                                <option value="popular">Popular</option>
-                                <option value="newest">Newest</option>
-                                <option value="oldest">Oldest</option>
-                            </select>
-                            <svg className="w-4 h-4 text-slate-500 absolute right-3 top-3 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                        </div>
+                        {/* Sort */}
+                        <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={{ padding: '0.45rem 0.75rem', borderRadius: '0.5rem', border: `1px solid ${C.border}`, fontSize: '0.82rem', color: C.t2, background: C.bg, fontWeight: 700, outline: 'none', cursor: 'pointer' }}>
+                            <option value="popular">Popular</option>
+                            <option value="newest">Newest</option>
+                            <option value="oldest">Oldest</option>
+                        </select>
                     </div>
                 </div>
+            </div>
 
-                {/* Grid */}
+            {/* Grid */}
+            <div style={{ maxWidth: 1200, margin: '0 auto', padding: '1.5rem' }}>
                 {loading ? (
-                    <div className="flex justify-center items-center py-20">
-                        <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                        {[1,2,3,4,5,6].map(i => <div key={i} style={{ background: C.card, borderRadius: '1.25rem', height: 320, animation: 'pulse 1.5s infinite', border: `1px solid ${C.border}` }} />)}
+                    </div>
+                ) : filtered.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '5rem', background: C.card, borderRadius: '1.25rem', border: `1px solid ${C.border}` }}>
+                        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔍</div>
+                        <h3 style={{ color: C.t1, fontWeight: 700 }}>No projects found</h3>
+                        <button onClick={() => { setActiveFilter('All'); setSearch(''); }} style={{ marginTop: '1rem', padding: '0.6rem 1.5rem', borderRadius: '0.625rem', background: C.accent, color: '#fff', fontWeight: 700, border: 'none', cursor: 'pointer' }}>Clear Filters</button>
                     </div>
                 ) : (
-                    <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
                         <AnimatePresence>
-                            {filteredProjects.map((project, index) => (
-                                <motion.div
-                                    key={project._id}
-                                    layout
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, scale: 0.9 }}
-                                    transition={{ duration: 0.3, delay: index * 0.05 }}
-                                >
-                                    <Link to={`/projects/${project._id}`} className="group block h-full bg-white rounded-3xl border border-slate-200 overflow-hidden hover:shadow-2xl hover:shadow-purple-500/10 transition-all duration-300 transform hover:-translate-y-2 flex flex-col">
-                                        <div className="h-56 bg-slate-100 relative overflow-hidden">
-                                            {project.coverImage ? (
-                                                <img
-                                                    src={project.coverImage}
-                                                    alt={project.title}
-                                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                                                />
-                                            ) : (
-                                                <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 text-slate-400">
-                                                    <svg className="w-16 h-16 mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                    </svg>
-                                                    <span className="text-xs font-bold uppercase tracking-widest opacity-50">No Preview</span>
-                                                </div>
-                                            )}
-
-                                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity"></div>
-
-                                            <div className="absolute top-4 right-4 z-10">
-                                                <div className="bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full text-xs font-bold text-slate-800 shadow-lg opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0">
-                                                    View Project
-                                                </div>
-                                            </div>
-
-                                            <div className="absolute bottom-4 left-4 right-4 z-10 flex justify-between items-end">
-                                                <div className="flex -space-x-2">
-                                                    {/* Mock contributors for visual flair if needed, using author for now */}
-                                                    <img src={project.author?.avatar || `https://ui-avatars.com/api/?name=${project.author?.name || 'Anonymous'}`} alt="" className="w-8 h-8 rounded-full border-2 border-white bg-white" title={project.author?.name || 'Anonymous'} />
-                                                </div>
-                                                <div className="bg-black/40 backdrop-blur-md rounded-lg px-2 py-1 text-white text-xs font-bold flex items-center">
-                                                    <svg className="w-3 h-3 mr-1 text-pink-400" fill="currentColor" viewBox="0 0 20 20"><path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" /></svg>
-                                                    {project.likes.length}
+                            {filtered.map((project, i) => (
+                                <motion.div key={project._id} layout initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ delay: i * 0.04 }}>
+                                    <Link to={`/projects/${project._id}`} style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', height: '100%', background: C.card, borderRadius: '1.25rem', border: `1px solid ${C.border}`, overflow: 'hidden', transition: 'all 0.25s ease' }}
+                                        onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 12px 32px rgba(0,0,0,0.1)'; e.currentTarget.style.transform = 'translateY(-4px)'; }}
+                                        onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'none'; }}>
+                                        {/* Cover image */}
+                                        <div style={{ height: 200, background: project.coverImage ? 'transparent' : 'linear-gradient(135deg, #e2e8f0, #f1f5f9)', position: 'relative', overflow: 'hidden' }}>
+                                            {project.coverImage
+                                                ? <img src={project.coverImage} alt={project.title} style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.4s ease' }}
+                                                    onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
+                                                    onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'} />
+                                                : <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #eff6ff, #faf5ff)' }}>
+                                                    <span style={{ fontSize: '3rem', opacity: 0.5 }}>🚀</span>
+                                                    <span style={{ fontSize: '0.7rem', color: C.t3, fontWeight: 700, marginTop: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>No Preview</span>
+                                                </div>}
+                                            {/* Overlay stats */}
+                                            <div style={{ position: 'absolute', bottom: 10, left: 10, right: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <img src={project.author?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(project.author?.name || 'U')}&background=6366f1&color=fff&bold=true`}
+                                                    style={{ width: 32, height: 32, borderRadius: '50%', border: '2px solid #fff', objectFit: 'cover' }} />
+                                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                    <span style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)', color: '#fff', fontSize: '0.72rem', fontWeight: 700, padding: '0.2rem 0.6rem', borderRadius: '999px' }}>❤️ {project.likes.length}</span>
+                                                    <span style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)', color: '#fff', fontSize: '0.72rem', fontWeight: 700, padding: '0.2rem 0.6rem', borderRadius: '999px' }}>👁️ {project.views || 0}</span>
                                                 </div>
                                             </div>
                                         </div>
-
-                                        <div className="p-6 flex-1 flex flex-col">
-                                            <div className="mb-4">
-                                                <div className="flex flex-wrap gap-2 mb-3">
-                                                    {project.tags.slice(0, 3).map(tag => (
-                                                        <span key={tag} className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md border border-indigo-100">
-                                                            {tag}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                                <h3 className="text-xl font-display font-bold text-slate-900 group-hover:text-purple-600 transition-colors leading-tight mb-2">
-                                                    {project.title}
-                                                </h3>
-                                                <p className="text-slate-500 text-sm line-clamp-2 leading-relaxed">{project.description}</p>
+                                        {/* Content */}
+                                        <div style={{ padding: '1.25rem', flex: 1, display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
+                                                {project.tags.slice(0, 3).map(t => (
+                                                    <span key={t} style={{ fontSize: '0.68rem', fontWeight: 700, padding: '0.15rem 0.5rem', borderRadius: '0.25rem', background: '#eff6ff', color: '#3730a3', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{t}</span>
+                                                ))}
                                             </div>
-
-                                            <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-medium text-slate-500">
-                                                <span>{new Date(project.createdAt).toLocaleDateString()}</span>
-                                                <span className="flex items-center">
-                                                    <svg className="w-4 h-4 mr-1.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                                                    {project.views}
-                                                </span>
+                                            <h3 style={{ fontWeight: 800, color: C.t1, fontSize: '1rem', fontFamily: '"Space Grotesk", sans-serif', lineHeight: 1.3, margin: 0 }}>{project.title}</h3>
+                                            <p style={{ color: C.t2, fontSize: '0.85rem', lineHeight: 1.6, flex: 1, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', margin: 0 }}>{project.description}</p>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.75rem', borderTop: `1px solid ${C.border}`, fontSize: '0.75rem', color: C.t3, fontWeight: 600 }}>
+                                                <span>by {project.author?.name || 'Anonymous'}</span>
+                                                <span>{new Date(project.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                                             </div>
                                         </div>
                                     </Link>
@@ -260,26 +161,6 @@ const ProjectGallery = () => {
                             ))}
                         </AnimatePresence>
                     </div>
-                )}
-
-                {!loading && filteredProjects.length === 0 && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="text-center py-24 bg-white rounded-3xl border border-slate-200 shadow-sm"
-                    >
-                        <div className="mx-auto w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6">
-                            <svg className="w-10 h-10 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                        </div>
-                        <h3 className="text-xl font-bold text-slate-900 mb-2">No projects found</h3>
-                        <p className="max-w-md mx-auto text-slate-500 mb-8">We couldn't find any projects matching your search. Try different keywords or clear your filters.</p>
-                        <button
-                            onClick={() => { setActiveFilter('All'); setSearchQuery(''); }}
-                            className="px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200/60"
-                        >
-                            Reset Search
-                        </button>
-                    </motion.div>
                 )}
             </div>
         </div>
