@@ -17,7 +17,7 @@ const DEFAULT_LINKS = [
 ];
 
 const Navbar = ({ forceWhite, links = DEFAULT_LINKS }: NavbarProps) => {
-    const { user, logout, secondsRemaining } = auth!;
+    const { user, logout, secondsRemaining } = useContext(AuthContext)!;
     const navigate = useNavigate();
     const location = useLocation();
     const [scrolled, setScrolled] = useState(false);
